@@ -1,0 +1,225 @@
+# F1 Race Control Matrix - Home Assistant helper sensors
+#
+# Copy this file to:
+#   /config/packages/f1_race_control.yaml
+#
+# and make sure configuration.yaml contains:
+#
+# homeassistant:
+#   packages: !include_dir_named packages
+#
+# Required source entities are provided by the F1 Sensor integration:
+# - sensor.f1_driver_positions
+# - sensor.f1_session_time_remaining
+#
+# These compact helper sensors prevent the ESPHome device from subscribing
+# directly to the large driver_positions attribute.
+
+template:
+  - sensor:
+      # Q1: P17-P22. Q2: P11-P16.
+      # If a Q2 participant has no Q2 position, slot 6 falls back to a
+      # Q1 survivor without a Q2 position.
+      - name: "F1 Eliminated 1"
+        unique_id: f1_eliminated_1
+        state: >
+          {% set d = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+          {% set part = state_attr('sensor.f1_session_time_remaining', 'session_part') | int(0) %}
+          {% set ns = namespace(driver=none) %}
+          {% set target = 17 if part <= 1 else 11 %}
+          {% for x in d %}
+            {% set p = x.q1_position if part <= 1 else x.q2_position %}
+            {% if p is not none and p | int(0) == target %}{% set ns.driver = x %}{% endif %}
+          {% endfor %}
+          {{ ns.driver.tla if ns.driver else '---' }}
+
+      - name: "F1 Eliminated 2"
+        unique_id: f1_eliminated_2
+        state: >
+          {% set d = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+          {% set part = state_attr('sensor.f1_session_time_remaining', 'session_part') | int(0) %}
+          {% set ns = namespace(driver=none) %}
+          {% set target = 18 if part <= 1 else 12 %}
+          {% for x in d %}
+            {% set p = x.q1_position if part <= 1 else x.q2_position %}
+            {% if p is not none and p | int(0) == target %}{% set ns.driver = x %}{% endif %}
+          {% endfor %}
+          {{ ns.driver.tla if ns.driver else '---' }}
+
+      - name: "F1 Eliminated 3"
+        unique_id: f1_eliminated_3
+        state: >
+          {% set d = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+          {% set part = state_attr('sensor.f1_session_time_remaining', 'session_part') | int(0) %}
+          {% set ns = namespace(driver=none) %}
+          {% set target = 19 if part <= 1 else 13 %}
+          {% for x in d %}
+            {% set p = x.q1_position if part <= 1 else x.q2_position %}
+            {% if p is not none and p | int(0) == target %}{% set ns.driver = x %}{% endif %}
+          {% endfor %}
+          {{ ns.driver.tla if ns.driver else '---' }}
+
+      - name: "F1 Eliminated 4"
+        unique_id: f1_eliminated_4
+        state: >
+          {% set d = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+          {% set part = state_attr('sensor.f1_session_time_remaining', 'session_part') | int(0) %}
+          {% set ns = namespace(driver=none) %}
+          {% set target = 20 if part <= 1 else 14 %}
+          {% for x in d %}
+            {% set p = x.q1_position if part <= 1 else x.q2_position %}
+            {% if p is not none and p | int(0) == target %}{% set ns.driver = x %}{% endif %}
+          {% endfor %}
+          {{ ns.driver.tla if ns.driver else '---' }}
+
+      - name: "F1 Eliminated 5"
+        unique_id: f1_eliminated_5
+        state: >
+          {% set d = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+          {% set part = state_attr('sensor.f1_session_time_remaining', 'session_part') | int(0) %}
+          {% set ns = namespace(driver=none) %}
+          {% set target = 21 if part <= 1 else 15 %}
+          {% for x in d %}
+            {% set p = x.q1_position if part <= 1 else x.q2_position %}
+            {% if p is not none and p | int(0) == target %}{% set ns.driver = x %}{% endif %}
+          {% endfor %}
+          {{ ns.driver.tla if ns.driver else '---' }}
+
+      - name: "F1 Eliminated 6"
+        unique_id: f1_eliminated_6
+        state: >
+          {% set d = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+          {% set part = state_attr('sensor.f1_session_time_remaining', 'session_part') | int(0) %}
+          {% set ns = namespace(driver=none) %}
+          {% if part <= 1 %}
+            {% for x in d %}
+              {% if x.q1_position is not none and x.q1_position | int(0) == 22 %}
+                {% set ns.driver = x %}
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            {% for x in d %}
+              {% if x.q2_position is not none and x.q2_position | int(0) == 16 %}
+                {% set ns.driver = x %}
+              {% endif %}
+            {% endfor %}
+            {% if ns.driver is none %}
+              {% for x in d %}
+                {% if x.q1_position is not none and x.q1_position | int(0) <= 16 and x.q2_position is none %}
+                  {% set ns.driver = x %}
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          {% endif %}
+          {{ ns.driver.tla if ns.driver else '---' }}
+
+      - name: "F1 Race P1"
+        unique_id: f1_race_p1
+        state: >
+          {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+          {% set ns = namespace(driver=none) %}
+          {% for driver in drivers %}
+            {% if driver.current_position | string == '1' %}{% set ns.driver = driver %}{% endif %}
+          {% endfor %}
+          {{ ns.driver.tla if ns.driver else '---' }}
+        attributes:
+          position: >
+            {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+            {% set ns = namespace(driver=none) %}
+            {% for driver in drivers %}
+              {% if driver.current_position | string == '1' %}{% set ns.driver = driver %}{% endif %}
+            {% endfor %}
+            {{ ns.driver.current_position if ns.driver else '' }}
+          gap_to_leader: "LEADER"
+          team: >
+            {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+            {% set ns = namespace(driver=none) %}
+            {% for driver in drivers %}
+              {% if driver.current_position | string == '1' %}{% set ns.driver = driver %}{% endif %}
+            {% endfor %}
+            {{ ns.driver.team if ns.driver else '' }}
+          team_color: >
+            {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+            {% set ns = namespace(driver=none) %}
+            {% for driver in drivers %}
+              {% if driver.current_position | string == '1' %}{% set ns.driver = driver %}{% endif %}
+            {% endfor %}
+            {{ ns.driver.team_color if ns.driver else '' }}
+
+      - name: "F1 Race P2"
+        unique_id: f1_race_p2
+        state: >
+          {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+          {% set ns = namespace(driver=none) %}
+          {% for driver in drivers %}
+            {% if driver.current_position | string == '2' %}{% set ns.driver = driver %}{% endif %}
+          {% endfor %}
+          {{ ns.driver.tla if ns.driver else '---' }}
+        attributes:
+          position: >
+            {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+            {% set ns = namespace(driver=none) %}
+            {% for driver in drivers %}
+              {% if driver.current_position | string == '2' %}{% set ns.driver = driver %}{% endif %}
+            {% endfor %}
+            {{ ns.driver.current_position if ns.driver else '' }}
+          gap_to_leader: >
+            {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+            {% set ns = namespace(driver=none) %}
+            {% for driver in drivers %}
+              {% if driver.current_position | string == '2' %}{% set ns.driver = driver %}{% endif %}
+            {% endfor %}
+            {{ ns.driver.gap_to_leader if ns.driver else '--' }}
+          team: >
+            {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+            {% set ns = namespace(driver=none) %}
+            {% for driver in drivers %}
+              {% if driver.current_position | string == '2' %}{% set ns.driver = driver %}{% endif %}
+            {% endfor %}
+            {{ ns.driver.team if ns.driver else '' }}
+          team_color: >
+            {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+            {% set ns = namespace(driver=none) %}
+            {% for driver in drivers %}
+              {% if driver.current_position | string == '2' %}{% set ns.driver = driver %}{% endif %}
+            {% endfor %}
+            {{ ns.driver.team_color if ns.driver else '' }}
+
+      - name: "F1 Race P3"
+        unique_id: f1_race_p3
+        state: >
+          {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+          {% set ns = namespace(driver=none) %}
+          {% for driver in drivers %}
+            {% if driver.current_position | string == '3' %}{% set ns.driver = driver %}{% endif %}
+          {% endfor %}
+          {{ ns.driver.tla if ns.driver else '---' }}
+        attributes:
+          position: >
+            {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+            {% set ns = namespace(driver=none) %}
+            {% for driver in drivers %}
+              {% if driver.current_position | string == '3' %}{% set ns.driver = driver %}{% endif %}
+            {% endfor %}
+            {{ ns.driver.current_position if ns.driver else '' }}
+          gap_to_leader: >
+            {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+            {% set ns = namespace(driver=none) %}
+            {% for driver in drivers %}
+              {% if driver.current_position | string == '3' %}{% set ns.driver = driver %}{% endif %}
+            {% endfor %}
+            {{ ns.driver.gap_to_leader if ns.driver else '--' }}
+          team: >
+            {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+            {% set ns = namespace(driver=none) %}
+            {% for driver in drivers %}
+              {% if driver.current_position | string == '3' %}{% set ns.driver = driver %}{% endif %}
+            {% endfor %}
+            {{ ns.driver.team if ns.driver else '' }}
+          team_color: >
+            {% set drivers = state_attr('sensor.f1_driver_positions', 'drivers') or [] %}
+            {% set ns = namespace(driver=none) %}
+            {% for driver in drivers %}
+              {% if driver.current_position | string == '3' %}{% set ns.driver = driver %}{% endif %}
+            {% endfor %}
+            {{ ns.driver.team_color if ns.driver else '' }}
