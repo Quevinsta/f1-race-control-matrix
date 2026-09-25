@@ -6,6 +6,8 @@ The project turns a Waveshare ESP32-S3 RGB Matrix controller and HUB75 panel int
 
 > **Status:** private development preview. The current public-ready configuration is being cleaned up from the tested V12.6.37 firmware before the repository is made public.
 
+[Nederlandse README](README.nl.md)
+
 ## Hardware
 
 - Waveshare ESP32-S3 RGB Matrix board (ESP32-S3-N32R16)
