@@ -1,15 +1,2421 @@
-# F1 Race Control Matrix - public firmware candidate
+# IMPORTANT: This is a sanitized private-preview build.
+# ============================================================
+# WAVESHARE MATRIX
+# ESPHome 2026.9.0
+# Waveshare ESP32-S3 RGB Matrix Driver Board
+# HUB75 128x64
 #
-# Validated and successfully compiled with ESPHome 2026.9.0 on 2026-09-25.
-# Based on the tested V12.6.37 development firmware.
+# Public preview based on V12.6.37
+# F1TV/Viaplay sync + 10-minute post-session timing hold
 #
-# NOTE:
-# The full public firmware source is being promoted from the validated RC1
-# candidate. See the project README and installation documentation.
+# Display:
+# F1 Race Control
+# ============================================================
+
+substitutions:
+  device_name: f1-race-control-matrix
+  friendly_name: F1 Race Control Matrix
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  variant: esp32s3
+  flash_size: 32MB
+  framework:
+    type: esp-idf
+    advanced:
+      enable_idf_experimental_features: true
+
+# External PSRAM on the ESP32-S3-N32R16.
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+
+api:
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+captive_portal:
+
+
+# ============================================================
+# TIJD
+# ============================================================
+
+time:
+  - platform: homeassistant
+    id: ha_time
+
+
+# ============================================================
+# ACTIEVE PAGINA
 #
-# Required secrets:
-#   wifi_ssid
-#   wifi_password
+# Public distribution: Race Control is the primary page.
+# 2 = F1 Race Control
+# ============================================================
+
+globals:
+  - id: active_page
+    type: int
+    restore_value: no
+    initial_value: '2'
+
+
+  - id: flag_animation
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+  - id: flag_animation_frame
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+  # Eliminatiescherm: 0=uit, 1=Q1, 2=Q2, 3=SQ1, 4=SQ2.
+  - id: f1_elimination_screen
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+  - id: f1_elimination_until_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+
+  - id: f1_previous_session_part
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+
+  # ==========================================================
+  # F1 RACE CONTROL DATA
+  # De F1TV-vertraging wordt centraal geregeld door Home Assistant:
+  # number.f1_live_delay (0-300 s).
+  # ESPHome voegt zelf GEEN extra vaste vertraging meer toe.
+  # ==========================================================
+
+  - id: f1_delay_current_session
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  # Laat de laatst bekende sessie nog 10 minuten staan wanneer de integratie
+  # direct na de vlag current_session wist. Zo blijven laatste vliegende
+  # rondes bij Practice/Qualifying zichtbaar.
+  - id: f1_last_known_session
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+
+  - id: f1_last_known_session_until
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+
+  # Expliciete naloop na het einde van een F1-sessie.
+  # Na P1/P2/P3, Q3/SQ3, Sprint en Race blijft F1 TIMING
+  # nog exact 10 minuten zichtbaar voordat STANDBY mag verschijnen.
+  - id: f1_session_finish_hold_until
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+
+  - id: f1_delay_session_status
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  - id: f1_delay_track_status
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  - id: f1_delay_top1
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  - id: f1_delay_top2
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  - id: f1_delay_top3
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  - id: f1_delay_top1_laptime
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  - id: f1_delay_top2_laptime
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  - id: f1_delay_top3_laptime
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  - id: f1_delay_top1_team_color
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  - id: f1_delay_top2_team_color
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  - id: f1_delay_top3_team_color
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  - id: f1_delay_time_remaining
+    type: std::string
+    restore_value: no
+    initial_value: '"unavailable"'
+
+  - id: f1_countdown_seconds
+    type: int
+    restore_value: no
+    initial_value: '-1'
+
+  - id: f1_countdown_sync_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+
+  - id: f1_zero_chequered_shown
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  # Alleen een echte LIVE countdown die boven nul is geweest mag
+  # later bij 00:00 een chequered animatie starten.
+  - id: f1_zero_chequered_armed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: f1_chequered_started_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+
+  - id: f1_delay_session_part
+    type: float
+    restore_value: no
+    initial_value: 'NAN'
+
+  - id: f1_delay_race_lap
+    type: float
+    restore_value: no
+    initial_value: 'NAN'
+
+  - id: f1_delay_total_laps
+    type: float
+    restore_value: no
+    initial_value: 'NAN'
+
+  - id: f1_track_status_initialized
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: f1_green_until_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+
+
+
+# ============================================================
+# POWER
+# ============================================================
+
+
+
+
+# ============================================================
+# WAVESHARE AUDIO - ES7210 MICROPHONE TEST
 #
-# This marker file will be replaced by the complete validated source before
-# the public v1.0.0 release.
+# Waveshare ESP32-S3-RGB-Matrix (SKU 34422)
+# I2C:
+#   SDA      = GPIO47
+#   SCL      = GPIO48
+# I2S:
+#   BCLK     = GPIO43
+#   LRCLK    = GPIO38
+#   MCLK     = GPIO12
+#   DIN      = GPIO39
+# ES7210 address = 0x40
+#
+# Speaker/ES8311 output is intentionally not configured.
+# ============================================================
+
+
+switch:
+  - platform: template
+    name: "Power"
+    id: matrix_power
+    icon: mdi:power
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+
+    turn_on_action:
+      - hub75.set_brightness:
+          id: matrix_display
+          brightness: !lambda |-
+            float percent = id(matrix_brightness).state;
+
+            if (isnan(percent)) {
+              percent = 50.0;
+            }
+
+            return (uint8_t) round(
+              (percent / 100.0) * 255.0
+            );
+
+    turn_off_action:
+      - hub75.set_brightness:
+          id: matrix_display
+          brightness: 0
+
+
+# ============================================================
+# BRIGHTNESS
+# ============================================================
+
+number:
+  - platform: template
+    name: "Brightness"
+    id: matrix_brightness
+    icon: mdi:brightness-6
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 1
+    initial_value: 50
+    restore_value: true
+    optimistic: true
+    mode: slider
+
+    on_value:
+      then:
+        - if:
+            condition:
+              switch.is_on: matrix_power
+            then:
+              - hub75.set_brightness:
+                  id: matrix_display
+                  brightness: !lambda |-
+                    return (uint8_t) round(
+                      (x / 100.0) * 255.0
+                    );
+
+  # Interne directe koppeling met de F1 Sensor-integratie.
+  # Deze entity wordt niet als extra bediening in Home Assistant getoond.
+  - platform: homeassistant
+    id: f1_live_delay_source
+    entity_id: number.f1_live_delay
+    internal: true
+
+    on_value:
+      then:
+        - lambda: |-
+            if (!isnan(x) && fabsf(id(f1tv_synchronisatie).state - x) >= 0.5f) {
+              id(f1tv_synchronisatie).publish_state(x);
+            }
+
+  # Zichtbare bediening op de Waveshare/ESPHome-devicepagina.
+  # number.set stuurt rechtstreeks naar bovenstaande Home Assistant-number.
+  - platform: template
+    name: "F1TV/Viaplay Sync"
+    id: f1tv_synchronisatie
+    icon: mdi:speedometer
+    unit_of_measurement: "s"
+    min_value: 0
+    max_value: 300
+    step: 1
+    mode: slider
+    optimistic: true
+    restore_value: false
+    initial_value: 0
+
+    set_action:
+      - number.set:
+          id: f1_live_delay_source
+          value: !lambda 'return x;'
+
+
+# ============================================================
+# F1 RACE CONTROL - CENTRALE DELAY
+#
+# Geen lokale 41s-buffer meer. number.f1_live_delay van de F1 Sensor
+# integratie vertraagt de brondata centraal, zodat timing, rondes,
+# vlaggen en sessiestatus dezelfde instelbare delay gebruiken.
+# ============================================================
+
+script:
+  - id: delay_f1_current_session
+    mode: queued
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          id(f1_delay_current_session) = value;
+
+          bool known =
+            value == "Practice 1" ||
+            value == "Practice 2" ||
+            value == "Practice 3" ||
+            value == "Qualifying" ||
+            value == "Sprint Qualifying" ||
+            value == "Sprint" ||
+            value == "Race";
+
+          if (known) {
+            id(f1_last_known_session) = value;
+            id(f1_last_known_session_until) = millis() + 600000UL;
+          }
+
+          bool timed =
+            value == "Qualifying" ||
+            value == "Sprint Qualifying";
+
+          if (!timed) {
+            id(f1_zero_chequered_armed) = false;
+            id(f1_zero_chequered_shown) = false;
+          }
+
+  - id: delay_f1_session_status
+    mode: queued
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          // Een oude finishstatus mag niet alsnog afgaan
+          // wanneer Home Assistant inmiddels alweer naar een nieuwe fase is gegaan.
+          bool is_finish =
+            value == "finished" || value == "finalised" || value == "ended";
+
+          if (is_finish) {
+            std::string live_status = id(ha_f1_session_status).state;
+            for (auto &c : live_status) {
+              c = tolower(static_cast<unsigned char>(c));
+            }
+
+            bool live_still_finished =
+              live_status == "finished" ||
+              live_status == "finalised" ||
+              live_status == "ended";
+
+            if (!live_still_finished) {
+              return;
+            }
+          }
+
+          std::string delayed_session = id(f1_delay_current_session);
+          if (
+            delayed_session != "Practice 1" &&
+            delayed_session != "Practice 2" &&
+            delayed_session != "Practice 3" &&
+            delayed_session != "Qualifying" &&
+            delayed_session != "Sprint Qualifying" &&
+            delayed_session != "Sprint" &&
+            delayed_session != "Race"
+          ) {
+            delayed_session = id(f1_last_known_session);
+          }
+
+          bool timed_session =
+            delayed_session == "Qualifying" ||
+            delayed_session == "Sprint Qualifying";
+
+          // Bij Qualifying/Sprint Qualifying bepaalt de zichtbare 00:00 de
+          // finishvlag. Een finished-status tijdens Q1/Q2 mag dus niet als
+          // einde van de hele sessie worden behandeld. Alleen Q3/SQ3 krijgt
+          // de algemene 10-minuten-naloop.
+          if (is_finish && timed_session) {
+            int part = isnan(id(f1_delay_session_part))
+              ? 0
+              : (int) lroundf(id(f1_delay_session_part));
+
+            if (part >= 3) {
+              id(f1_last_known_session) = delayed_session;
+              id(f1_session_finish_hold_until) = millis() + 600000UL;
+              id(f1_last_known_session_until) = id(f1_session_finish_hold_until);
+            }
+            return;
+          }
+
+          std::string previous_status = id(f1_delay_session_status);
+          for (auto &c : previous_status) {
+            c = tolower(static_cast<unsigned char>(c));
+          }
+
+          id(f1_delay_session_status) = value;
+
+          // Race/Sprint: alleen een echte overgang vanuit LIVE mag de
+          // chequered animatie starten. Een oude FINISHED-status bij
+          // reconnect, refresh of pre-session data wordt zo genegeerd.
+          if (is_finish && previous_status == "live") {
+            id(flag_animation) = 6;
+            id(flag_animation_frame) = 0;
+            id(f1_chequered_started_ms) = millis();
+
+            // P1/P2/P3, Sprint en Race: vanaf de vertraagde officiële
+            // finish nog 10 minuten F1 TIMING vasthouden.
+            if (!delayed_session.empty()) {
+              id(f1_last_known_session) = delayed_session;
+            }
+            id(f1_session_finish_hold_until) = millis() + 600000UL;
+            id(f1_last_known_session_until) = id(f1_session_finish_hold_until);
+          }
+      - if:
+          condition:
+            lambda: |-
+              return id(flag_animation) == 6;
+          then:
+            - delay: 10s
+            - lambda: |-
+                if (id(flag_animation) == 6) {
+                  id(flag_animation) = 0;
+                }
+
+  - id: delay_f1_track_status
+    mode: restart
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          std::string previous = id(f1_delay_track_status);
+          bool had_previous = id(f1_track_status_initialized);
+
+          id(f1_delay_track_status) = value;
+          id(f1_track_status_initialized) = true;
+
+          int animation = 0;
+
+          if (value == "YELLOW") {
+            animation = 1;
+            id(f1_green_until_ms) = 0;
+          } else if (value == "RED") {
+            animation = 3;
+            id(f1_green_until_ms) = 0;
+          } else if (value == "VSC") {
+            animation = 4;
+            id(f1_green_until_ms) = 0;
+          } else if (value == "SC") {
+            animation = 5;
+            id(f1_green_until_ms) = 0;
+          } else if (value == "CLEAR") {
+            if (had_previous && previous != "CLEAR" && !previous.empty()) {
+              animation = 2;
+              id(f1_green_until_ms) = millis() + 60000UL;
+            }
+          }
+
+          if (animation != 0) {
+            id(flag_animation) = animation;
+            id(flag_animation_frame) = 0;
+          }
+      - if:
+          condition:
+            lambda: |-
+              return id(flag_animation) >= 1 && id(flag_animation) <= 5;
+          then:
+            - delay: 10s
+            - lambda: |-
+                if (id(flag_animation) >= 1 && id(flag_animation) <= 5) {
+                  id(flag_animation) = 0;
+                }
+
+  - id: delay_f1_top1
+    mode: restart
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          id(f1_delay_top1) = value;
+
+  - id: delay_f1_top2
+    mode: restart
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          id(f1_delay_top2) = value;
+
+  - id: delay_f1_top3
+    mode: restart
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          id(f1_delay_top3) = value;
+
+  - id: delay_f1_top1_laptime
+    mode: restart
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          id(f1_delay_top1_laptime) = value;
+
+  - id: delay_f1_top2_laptime
+    mode: restart
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          id(f1_delay_top2_laptime) = value;
+
+  - id: delay_f1_top3_laptime
+    mode: restart
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          id(f1_delay_top3_laptime) = value;
+
+  - id: delay_f1_top1_team_color
+    mode: restart
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          id(f1_delay_top1_team_color) = value;
+
+  - id: delay_f1_top2_team_color
+    mode: restart
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          id(f1_delay_top2_team_color) = value;
+
+  - id: delay_f1_top3_team_color
+    mode: restart
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          id(f1_delay_top3_team_color) = value;
+
+  - id: delay_f1_time_remaining
+    mode: restart
+    parameters:
+      value: string
+    then:
+      - lambda: |-
+          id(f1_delay_time_remaining) = value;
+
+          int total_seconds = -1;
+          int a = 0;
+          int b = 0;
+          int c = 0;
+
+          if (sscanf(value.c_str(), "%d:%d:%d", &a, &b, &c) == 3) {
+            total_seconds = (a * 3600) + (b * 60) + c;
+          } else if (sscanf(value.c_str(), "%d:%d", &a, &b) == 2) {
+            total_seconds = (a * 60) + b;
+          }
+
+          if (total_seconds >= 0) {
+            // De F1 Sensor integratie levert deze waarde al met de ingestelde
+            // number.f1_live_delay. ESPHome telt daarom niets extra op.
+            id(f1_countdown_seconds) = total_seconds;
+            id(f1_countdown_sync_ms) = millis();
+
+            if (total_seconds > 0) {
+              id(f1_zero_chequered_shown) = false;
+
+              std::string session = id(f1_delay_current_session);
+              std::string status = id(f1_delay_session_status);
+              for (auto &c : status) {
+                c = tolower(static_cast<unsigned char>(c));
+              }
+
+              bool timed =
+                session == "Qualifying" ||
+                session == "Sprint Qualifying";
+
+              if (timed && status == "live") {
+                id(f1_zero_chequered_armed) = true;
+              }
+            }
+          } else {
+            id(f1_countdown_seconds) = -1;
+            id(f1_countdown_sync_ms) = 0;
+          }
+
+  - id: delay_f1_session_part
+    mode: restart
+    parameters:
+      value: float
+    then:
+      - lambda: |-
+          int new_part = isnan(value) ? 0 : (int) lroundf(value);
+          int old_part = id(f1_previous_session_part);
+          std::string session = id(f1_delay_current_session);
+
+          id(f1_delay_session_part) = value;
+
+          // Toon de afvallers precies bij de overgang naar de volgende kwalificatiedeel.
+          // De zes namen komen uit compacte HA-template-sensoren.
+          if (old_part == 1 && new_part == 2) {
+            if (session == "Qualifying") {
+              id(f1_elimination_screen) = 1;
+              id(f1_elimination_until_ms) = millis() + 10000UL;
+            } else if (session == "Sprint Qualifying") {
+              id(f1_elimination_screen) = 3;
+              id(f1_elimination_until_ms) = millis() + 10000UL;
+            }
+          } else if (old_part == 2 && new_part == 3) {
+            if (session == "Qualifying") {
+              id(f1_elimination_screen) = 2;
+              id(f1_elimination_until_ms) = millis() + 10000UL;
+            } else if (session == "Sprint Qualifying") {
+              id(f1_elimination_screen) = 4;
+              id(f1_elimination_until_ms) = millis() + 10000UL;
+            }
+          }
+
+          if (new_part >= 1 && new_part <= 3) {
+            id(f1_previous_session_part) = new_part;
+          }
+
+  - id: delay_f1_race_lap
+    mode: queued
+    parameters:
+      value: float
+    then:
+      - lambda: |-
+          id(f1_delay_race_lap) = value;
+
+  - id: delay_f1_total_laps
+    mode: queued
+    parameters:
+      value: float
+    then:
+      - lambda: |-
+          id(f1_delay_total_laps) = value;
+
+# ============================================================
+# HOME ASSISTANT TEKSTSENSOREN
+# ============================================================
+
+text_sensor:
+
+
+  - platform: homeassistant
+    id: ha_f1_current_session
+    entity_id: sensor.f1_current_session
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_current_session
+            value: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: ha_f1_session_status
+    entity_id: sensor.f1_session_status
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_session_status
+            value: !lambda 'return x;'
+
+
+
+
+
+
+
+
+
+
+  # ==========================================================
+  # F1 RACE CONTROL - LIVE DATA
+  # ==========================================================
+
+  # Zes compacte eliminatiesensoren uit Home Assistant.
+  # Q1/SQ1 leveren P17-P22; Q2/SQ2 leveren P11-P16.
+  - platform: homeassistant
+    id: ha_f1_eliminated_1
+    entity_id: sensor.f1_eliminated_1
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_eliminated_2
+    entity_id: sensor.f1_eliminated_2
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_eliminated_3
+    entity_id: sensor.f1_eliminated_3
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_eliminated_4
+    entity_id: sensor.f1_eliminated_4
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_eliminated_5
+    entity_id: sensor.f1_eliminated_5
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_eliminated_6
+    entity_id: sensor.f1_eliminated_6
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_race_p1
+    entity_id: sensor.f1_race_p1
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_race_p1_team
+    entity_id: sensor.f1_race_p1
+    attribute: team
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_race_p1_gap
+    entity_id: sensor.f1_race_p1
+    attribute: gap_to_leader
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_race_p2
+    entity_id: sensor.f1_race_p2
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_race_p2_team
+    entity_id: sensor.f1_race_p2
+    attribute: team
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_race_p2_gap
+    entity_id: sensor.f1_race_p2
+    attribute: gap_to_leader
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_race_p3
+    entity_id: sensor.f1_race_p3
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_race_p3_team
+    entity_id: sensor.f1_race_p3
+    attribute: team
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_race_p3_gap
+    entity_id: sensor.f1_race_p3
+    attribute: gap_to_leader
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_track_status
+    entity_id: sensor.f1_track_status
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_track_status
+            value: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: ha_f1_top1
+    entity_id: sensor.f1_top_three_p1
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_top1
+            value: !lambda 'return x;'
+  - platform: homeassistant
+    id: ha_f1_top2
+    entity_id: sensor.f1_top_three_p2
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_top2
+            value: !lambda 'return x;'
+  - platform: homeassistant
+    id: ha_f1_top3
+    entity_id: sensor.f1_top_three_p3
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_top3
+            value: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: ha_f1_top1_laptime
+    entity_id: sensor.f1_top_three_p1
+    attribute: lap_time
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_top1_laptime
+            value: !lambda 'return x;'
+  - platform: homeassistant
+    id: ha_f1_top2_laptime
+    entity_id: sensor.f1_top_three_p2
+    attribute: lap_time
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_top2_laptime
+            value: !lambda 'return x;'
+  - platform: homeassistant
+    id: ha_f1_top3_laptime
+    entity_id: sensor.f1_top_three_p3
+    attribute: lap_time
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_top3_laptime
+            value: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: ha_f1_top1_team
+    entity_id: sensor.f1_top_three_p1
+    attribute: team
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_top1_team_color
+    entity_id: sensor.f1_top_three_p1
+    attribute: team_color
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_top1_team_color
+            value: !lambda 'return x;'
+  - platform: homeassistant
+    id: ha_f1_top2_team
+    entity_id: sensor.f1_top_three_p2
+    attribute: team
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_top2_team_color
+    entity_id: sensor.f1_top_three_p2
+    attribute: team_color
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_top2_team_color
+            value: !lambda 'return x;'
+  - platform: homeassistant
+    id: ha_f1_top3_team
+    entity_id: sensor.f1_top_three_p3
+    attribute: team
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_top3_team_color
+    entity_id: sensor.f1_top_three_p3
+    attribute: team_color
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_top3_team_color
+            value: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: ha_f1_session_time_remaining
+    entity_id: sensor.f1_session_time_remaining
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_time_remaining
+            value: !lambda 'return x;'
+
+
+# ============================================================
+# HOME ASSISTANT NUMERIEKE SENSOREN
+# ============================================================
+
+sensor:
+
+
+  - platform: homeassistant
+    id: ha_f1_session_part
+    entity_id: sensor.f1_session_time_remaining
+    attribute: session_part
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_session_part
+            value: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: ha_f1_race_lap
+    entity_id: sensor.f1_race_lap_count
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_race_lap
+            value: !lambda 'return x;'
+
+  - platform: homeassistant
+    id: ha_f1_total_laps    entity_id: sensor.f1_race_lap_count
+    attribute: total_laps
+    internal: true
+    on_value:
+      then:
+        - script.execute:
+            id: delay_f1_total_laps
+            value: !lambda 'return x;'
+
+
+# ============================================================
+# HUB75 DISPLAY
+# ============================================================
+
+display:
+  - platform: hub75
+    id: matrix_display
+
+    panel_width: 128
+    panel_height: 64
+
+    r1_pin: GPIO4
+    g1_pin: GPIO5
+    b1_pin: GPIO6
+
+    r2_pin: GPIO7
+    g2_pin: GPIO15
+    b2_pin: GPIO16
+
+    a_pin: GPIO18
+    b_pin: GPIO8
+    c_pin: GPIO3
+    d_pin: GPIO42
+    e_pin: GPIO9
+
+    clk_pin: GPIO41
+    lat_pin: GPIO40
+    oe_pin: GPIO2
+
+    # Bewezen flickervrije instellingen
+    clock_speed: 20MHZ
+    clock_phase: true
+    latch_blanking: 8
+    bit_depth: 4
+    brightness: 26
+    update_interval: 16ms
+    double_buffer: true
+
+    lambda: |-
+
+      // =====================================================
+      // KLEUREN
+      // =====================================================
+
+      const Color WHITE(255, 255, 255);
+      const Color GREY(170, 170, 170);
+      const Color DARK_GREY(65, 65, 65);
+      const Color RED(225, 6, 0);
+      const Color GREEN(0, 255, 102);
+      const Color CLOUD(120, 125, 132);
+      const Color YELLOW(255, 213, 79);
+      const Color BLUE(66, 165, 245);
+      const Color BLACK(0, 0, 0);
+
+
+      // =====================================================
+      // 5x7 PROPORTIONEEL PIXELFONT
+      // =====================================================
+
+      auto get_glyph = [&](char ch, uint8_t rows[7]) -> int {
+
+        for (int i = 0; i < 7; i++) {
+          rows[i] = 0;
+        }
+
+        switch (ch) {
+
+          case '/': {
+            uint8_t r[7] = {
+              0b00001, 0b00010, 0b00010, 0b00100,
+              0b01000, 0b01000, 0b10000
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'A': {
+            uint8_t r[7] = {
+              0b01110, 0b10001, 0b10001, 0b11111,
+              0b10001, 0b10001, 0b10001
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'B': {
+            uint8_t r[7] = {
+              0b11110, 0b10001, 0b10001, 0b11110,
+              0b10001, 0b10001, 0b11110
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'C': {
+            uint8_t r[7] = {
+              0b01111, 0b10000, 0b10000, 0b10000,
+              0b10000, 0b10000, 0b01111
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'D': {
+            uint8_t r[7] = {
+              0b11110, 0b10001, 0b10001, 0b10001,
+              0b10001, 0b10001, 0b11110
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'E': {
+            uint8_t r[7] = {
+              0b11111, 0b10000, 0b10000, 0b11110,
+              0b10000, 0b10000, 0b11111
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'F': {
+            uint8_t r[7] = {
+              0b11111, 0b10000, 0b10000, 0b11110,
+              0b10000, 0b10000, 0b10000
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'G': {
+            uint8_t r[7] = {
+              0b01111, 0b10000, 0b10000, 0b10111,
+              0b10001, 0b10001, 0b01111
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'H': {
+            uint8_t r[7] = {
+              0b10001, 0b10001, 0b10001, 0b11111,
+              0b10001, 0b10001, 0b10001
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'I': {
+            uint8_t r[7] = {
+              0b11100, 0b01000, 0b01000, 0b01000,
+              0b01000, 0b01000, 0b11100
+            };
+            memcpy(rows, r, 7);
+            return 3;
+          }
+
+          case 'J': {
+            uint8_t r[7] = {
+              0b00111, 0b00010, 0b00010, 0b00010,
+              0b10010, 0b10010, 0b01100
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'K': {
+            uint8_t r[7] = {
+              0b10001, 0b10010, 0b10100, 0b11000,
+              0b10100, 0b10010, 0b10001
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'L': {
+            uint8_t r[7] = {
+              0b10000, 0b10000, 0b10000, 0b10000,
+              0b10000, 0b10000, 0b11110
+            };
+            memcpy(rows, r, 7);
+            return 4;
+          }
+
+          case 'M': {
+            uint8_t r[7] = {
+              0b10001, 0b11011, 0b10101, 0b10101,
+              0b10001, 0b10001, 0b10001
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'N': {
+            uint8_t r[7] = {
+              0b10001, 0b11001, 0b10101, 0b10011,
+              0b10001, 0b10001, 0b10001
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'O': {
+            uint8_t r[7] = {
+              0b01110, 0b10001, 0b10001, 0b10001,
+              0b10001, 0b10001, 0b01110
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'P': {
+            uint8_t r[7] = {
+              0b11110, 0b10001, 0b10001, 0b11110,
+              0b10000, 0b10000, 0b10000
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'Q': {
+            uint8_t r[7] = {
+              0b01110, 0b10001, 0b10001, 0b10001,
+              0b10101, 0b10010, 0b01101
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'R': {
+            uint8_t r[7] = {
+              0b11110, 0b10001, 0b10001, 0b11110,
+              0b10100, 0b10010, 0b10001
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'S': {
+            uint8_t r[7] = {
+              0b01111, 0b10000, 0b10000, 0b01110,
+              0b00001, 0b00001, 0b11110
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'T': {
+            uint8_t r[7] = {
+              0b11111, 0b00100, 0b00100, 0b00100,
+              0b00100, 0b00100, 0b00100
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'U': {
+            uint8_t r[7] = {
+              0b10001, 0b10001, 0b10001, 0b10001,
+              0b10001, 0b10001, 0b01110
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'V': {
+            uint8_t r[7] = {
+              0b10001, 0b10001, 0b10001, 0b10001,
+              0b10001, 0b01010, 0b00100
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'W': {
+            uint8_t r[7] = {
+              0b10001, 0b10001, 0b10001, 0b10101,
+              0b10101, 0b10101, 0b01010
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'X': {
+            uint8_t r[7] = {
+              0b10001, 0b10001, 0b01010, 0b00100,
+              0b01010, 0b10001, 0b10001
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'Y': {
+            uint8_t r[7] = {
+              0b10001, 0b10001, 0b01010, 0b00100,
+              0b00100, 0b00100, 0b00100
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case 'Z': {
+            uint8_t r[7] = {
+              0b11111, 0b00001, 0b00010, 0b00100,
+              0b01000, 0b10000, 0b11111
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+
+          // =================================================
+          // CIJFERS
+          // =================================================
+
+          case '0': {
+            uint8_t r[7] = {
+              0b01110, 0b10001, 0b10011, 0b10101,
+              0b11001, 0b10001, 0b01110
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case '1': {
+            uint8_t r[7] = {
+              0b01000, 0b11000, 0b01000, 0b01000,
+              0b01000, 0b01000, 0b11100
+            };
+            memcpy(rows, r, 7);
+            return 3;
+          }
+
+          case '2': {
+            uint8_t r[7] = {
+              0b01110, 0b10001, 0b00001, 0b00010,
+              0b00100, 0b01000, 0b11111
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case '3': {
+            uint8_t r[7] = {
+              0b11110, 0b00001, 0b00001, 0b01110,
+              0b00001, 0b00001, 0b11110
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case '4': {
+            uint8_t r[7] = {
+              0b00010, 0b00110, 0b01010, 0b10010,
+              0b11111, 0b00010, 0b00010
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case '5': {
+            uint8_t r[7] = {
+              0b11111, 0b10000, 0b10000, 0b11110,
+              0b00001, 0b00001, 0b11110
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case '6': {
+            uint8_t r[7] = {
+              0b01110, 0b10000, 0b10000, 0b11110,
+              0b10001, 0b10001, 0b01110
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case '7': {
+            uint8_t r[7] = {
+              0b11111, 0b00001, 0b00010, 0b00100,
+              0b01000, 0b01000, 0b01000
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case '8': {
+            uint8_t r[7] = {
+              0b01110, 0b10001, 0b10001, 0b01110,
+              0b10001, 0b10001, 0b01110
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case '9': {
+            uint8_t r[7] = {
+              0b01110, 0b10001, 0b10001, 0b01111,
+              0b00001, 0b00001, 0b01110
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+
+          // =================================================
+          // SYMBOLEN
+          // =================================================
+
+          case ':': {
+            uint8_t r[7] = {
+              0b00000, 0b01000, 0b01000, 0b00000,
+              0b01000, 0b01000, 0b00000
+            };
+            memcpy(rows, r, 7);
+            return 2;
+          }
+
+          case '+': {
+            uint8_t r[7] = {
+              0b00000, 0b00100, 0b00100, 0b11111,
+              0b00100, 0b00100, 0b00000
+            };
+            memcpy(rows, r, 7);
+            return 5;
+          }
+
+          case ',': {
+            uint8_t r[7] = {
+              0b00000, 0b00000, 0b00000, 0b00000,
+              0b01000, 0b01000, 0b10000
+            };
+            memcpy(rows, r, 7);
+            return 2;
+          }
+
+          case '-': {
+            uint8_t r[7] = {
+              0b00000, 0b00000, 0b00000, 0b11100,
+              0b00000, 0b00000, 0b00000
+            };
+            memcpy(rows, r, 7);
+            return 3;
+          }
+
+          case '.': {
+            uint8_t r[7] = {
+              0b00000, 0b00000, 0b00000, 0b00000,
+              0b00000, 0b01000, 0b01000
+            };
+            memcpy(rows, r, 7);
+            return 2;
+          }
+
+          case ' ': {
+            return 3;
+          }
+
+          default:
+            return 3;
+        }
+      };
+
+
+      // =====================================================
+      // TEKEN TEKENEN
+      // =====================================================
+
+      auto draw_char = [&](int x, int y, char ch, Color color) -> int {
+
+        uint8_t rows[7];
+
+        int width =
+          get_glyph(ch, rows);
+
+        for (int row = 0; row < 7; row++) {
+
+          for (int col = 0; col < width; col++) {
+
+            if (rows[row] & (1 << (4 - col))) {
+
+              it.draw_pixel_at(
+                x + col,
+                y + row,
+                color
+              );
+            }
+          }
+        }
+
+        return width;
+      };
+
+
+      // =====================================================
+      // TEKSTBREEDTE
+      // =====================================================
+
+      auto text_width = [&](const std::string &text) -> int {
+
+        int total = 0;
+        bool first = true;
+
+        for (char raw : text) {
+
+          char ch = raw;
+
+          if (ch >= 'a' && ch <= 'z') {
+            ch = ch - 'a' + 'A';
+          }
+
+          uint8_t rows[7];
+
+          int w =
+            get_glyph(ch, rows);
+
+          if (!first) {
+            total += 1;
+          }
+
+          total += w;
+          first = false;
+        }
+
+        return total;
+      };
+
+
+      // =====================================================
+      // TEKST TEKENEN
+      // =====================================================
+
+      auto draw_text = [&](int x, int y, const std::string &text, Color color) {
+
+        int cursor = x;
+        bool first = true;
+
+        for (char raw : text) {
+
+          char ch = raw;
+
+          if (ch >= 'a' && ch <= 'z') {
+            ch = ch - 'a' + 'A';
+          }
+
+          if (!first) {
+            cursor += 1;
+          }
+
+          int w =
+            draw_char(
+              cursor,
+              y,
+              ch,
+              color
+            );
+
+          cursor += w;
+          first = false;
+        }
+      };
+
+
+      // =====================================================
+      // GP-NAAM PASSEND MAKEN
+      // =====================================================
+
+      auto fit_race_name = [&](std::string name) -> std::string {
+
+        for (auto &c : name) {
+          c = toupper(static_cast<unsigned char>(c));
+        }
+
+        const int max_width = 118;
+
+        // 1. Volledige GP-naam behouden wanneer die past.
+        if (text_width(name) <= max_width) {
+          return name;
+        }
+
+        // 2. Alleen bij een te brede naam: GRAND PRIX -> GP.
+        std::string needle = "GRAND PRIX";
+        size_t pos = name.find(needle);
+
+        if (pos != std::string::npos) {
+          name.replace(
+            pos,
+            needle.length(),
+            "GP"
+          );
+        }
+
+        if (text_width(name) <= max_width) {
+          return name;
+        }
+
+        // 3. Bekende lange circuit/racenamen netjes inkorten.
+        // Dit gebeurt alleen wanneer zelfs de GP-versie nog te breed is.
+        if (
+          name.find("BARCELONA-CATALUNYA") != std::string::npos
+        ) {
+          name = "BARCELONA GP";
+        } else if (
+          name.find("UNITED STATES") != std::string::npos
+        ) {
+          name = "UNITED STATES GP";
+        } else if (
+          name.find("MEXICO CITY") != std::string::npos
+        ) {
+          name = "MEXICO CITY GP";
+        } else if (
+          name.find("SAO PAULO") != std::string::npos ||
+          name.find("SÃO PAULO") != std::string::npos
+        ) {
+          name = "SAO PAULO GP";
+        }
+
+        if (text_width(name) <= max_width) {
+          return name;
+        }
+
+        // 4. Generieke vangnet: kort af op een woordgrens.
+        // Nooit meer een half woord aan het einde van het paneel.
+        std::string fitted = name;
+
+        while (
+          !fitted.empty() &&
+          text_width(fitted) > max_width
+        ) {
+          size_t space = fitted.find_last_of(' ');
+
+          if (space == std::string::npos) {
+            break;
+          }
+
+          fitted.erase(space);
+
+          // Houd GP als herkenbare suffix wanneer mogelijk.
+          std::string with_gp = fitted + " GP";
+          if (text_width(with_gp) <= max_width) {
+            return with_gp;
+          }
+        }
+
+        if (
+          !fitted.empty() &&
+          text_width(fitted) <= max_width
+        ) {
+          return fitted;
+        }
+
+        // 5. Uiterste fallback voor één uitzonderlijk lang woord.
+        while (
+          !name.empty() &&
+          text_width(name) > max_width
+        ) {
+          name.pop_back();
+        }
+
+        return name;
+      };
+
+
+      // =====================================================
+      // ALGEMEEN
+      // =====================================================
+
+      auto now =
+        id(ha_time).now();
+
+      it.fill(BLACK);
+
+
+
+      // =====================================================
+      // F1 FLAG / RACE CONTROL ANIMATIES - 128x64
+      if (id(flag_animation) == 6 &&
+          id(f1_chequered_started_ms) != 0 &&
+          (millis() - id(f1_chequered_started_ms)) >= 10000UL) {
+        id(flag_animation) = 0;
+        id(f1_chequered_started_ms) = 0;
+      }
+
+      // 1=YELLOW, 2=GREEN, 3=RED, 4=VSC, 5=SC, 6=CHEQUERED
+      // =====================================================
+
+      if (id(flag_animation) != 0) {
+
+        const Color FLAG_YELLOW = Color(255, 220, 0);
+        const Color FLAG_DARK_YELLOW = Color(90, 72, 0);
+        const Color FLAG_GREEN = Color(0, 255, 80);
+        const Color FLAG_DARK_GREEN = Color(0, 70, 25);
+        const Color FLAG_RED = Color(255, 20, 20);
+        const Color FLAG_DARK_RED = Color(80, 0, 0);
+        const Color FLAG_GREY = Color(100, 100, 100);
+
+        auto draw_flag_text = [&](int x, int y, const std::string &value, Color color, int scale) {
+          int cursor = x;
+          for (char ch : value) {
+            uint8_t rows[7] = {0};
+            int char_width = get_glyph(ch, rows);
+            for (int row = 0; row < 7; row++) {
+              for (int col = 0; col < char_width; col++) {
+                if (rows[row] & (1 << (4 - col))) {
+                  it.filled_rectangle(
+                    cursor + (col * scale),
+                    y + (row * scale),
+                    scale,
+                    scale,
+                    color
+                  );
+                }
+              }
+            }
+            cursor += (char_width + 1) * scale;
+          }
+        };
+
+        auto flag_text_width = [&](const std::string &value, int scale) -> int {
+          int width = 0;
+          for (char ch : value) {
+            uint8_t rows[7] = {0};
+            int char_width = get_glyph(ch, rows);
+            width += (char_width + 1) * scale;
+          }
+          if (!value.empty()) width -= scale;
+          return width;
+        };
+
+        auto centered_flag_text = [&](int y, const std::string &value, Color color, int scale) {
+          int width = flag_text_width(value, scale);
+          draw_flag_text((128 - width) / 2, y, value, color, scale);
+        };
+
+        int frame = id(flag_animation_frame);
+
+        if (id(flag_animation) == 1) {
+          // YELLOW FLAG
+          it.filled_rectangle(0, 0, 128, 3, FLAG_YELLOW);
+          it.filled_rectangle(0, 61, 128, 3, FLAG_YELLOW);
+          it.filled_rectangle(0, 0, 3, 64, FLAG_YELLOW);
+          it.filled_rectangle(125, 0, 3, 64, FLAG_YELLOW);
+
+          int phase = frame % 16;
+          for (int x = -16 + phase; x < 144; x += 16) {
+            for (int i = 0; i < 8; i++) {
+              int px = x + i;
+              if (px >= 3 && px < 125) {
+                it.draw_pixel_at(px, 5 + (i / 2), FLAG_YELLOW);
+                it.draw_pixel_at(px, 6 + (i / 2), FLAG_YELLOW);
+                it.draw_pixel_at(px, 55 - (i / 2), FLAG_DARK_YELLOW);
+                it.draw_pixel_at(px, 56 - (i / 2), FLAG_DARK_YELLOW);
+              }
+            }
+          }
+          centered_flag_text(16, "YELLOW", FLAG_YELLOW, 2);
+          centered_flag_text(34, "FLAG", WHITE, 2);
+
+        } else if (id(flag_animation) == 2) {
+          // GREEN FLAG - groene sweep
+          int sweep = (frame * 4) % 160 - 16;
+          for (int x = 0; x < 128; x++) {
+            if (x < sweep) {
+              it.filled_rectangle(x, 0, 1, 64, FLAG_DARK_GREEN);
+            }
+          }
+          it.filled_rectangle(0, 0, 128, 3, FLAG_GREEN);
+          it.filled_rectangle(0, 61, 128, 3, FLAG_GREEN);
+          if (sweep >= 0 && sweep < 128) {
+            it.filled_rectangle(sweep, 3, 5, 58, FLAG_GREEN);
+          }
+          centered_flag_text(16, "GREEN", FLAG_GREEN, 2);
+          centered_flag_text(34, "FLAG", WHITE, 2);
+
+        } else if (id(flag_animation) == 3) {
+          // RED FLAG - pulserende rode waarschuwing
+          bool pulse = ((frame / 5) % 2) == 0;
+          Color pulse_color = pulse ? FLAG_RED : FLAG_DARK_RED;
+          it.filled_rectangle(0, 0, 128, 5, pulse_color);
+          it.filled_rectangle(0, 59, 128, 5, pulse_color);
+          it.filled_rectangle(0, 0, 5, 64, pulse_color);
+          it.filled_rectangle(123, 0, 5, 64, pulse_color);
+          centered_flag_text(16, "RED", FLAG_RED, 2);
+          centered_flag_text(34, "FLAG", WHITE, 2);
+
+        } else if (id(flag_animation) == 4) {
+          // VIRTUAL SAFETY CAR
+          int phase = frame % 12;
+          for (int x = -12 + phase; x < 140; x += 12) {
+            it.filled_rectangle(x, 4, 6, 3, FLAG_YELLOW);
+            it.filled_rectangle(122 - x, 57, 6, 3, FLAG_YELLOW);
+          }
+          centered_flag_text(13, "VSC", FLAG_YELLOW, 3);
+          centered_flag_text(39, "DEPLOYED", WHITE, 1);
+          it.filled_rectangle(0, 0, 128, 3, FLAG_YELLOW);
+          it.filled_rectangle(0, 61, 128, 3, FLAG_YELLOW);
+
+        } else if (id(flag_animation) == 5) {
+          // SAFETY CAR
+          int phase = (frame * 2) % 20;
+          it.filled_rectangle(0, 0, 128, 3, FLAG_YELLOW);
+          it.filled_rectangle(0, 61, 128, 3, FLAG_YELLOW);
+          for (int x = -20 + phase; x < 148; x += 20) {
+            for (int i = 0; i < 10; i++) {
+              int px = x + i;
+              if (px >= 0 && px < 128) {
+                it.draw_pixel_at(px, 8 + i / 2, FLAG_YELLOW);
+                it.draw_pixel_at(px, 53 - i / 2, FLAG_YELLOW);
+              }
+            }
+          }
+          centered_flag_text(14, "SAFETY", FLAG_YELLOW, 2);
+          centered_flag_text(34, "CAR", WHITE, 2);
+
+        } else if (id(flag_animation) == 6) {
+          // CHEQUERED FLAG - bewegend zwart/wit schaakpatroon
+          const int block = 8;
+          int shift = (frame / 2) % block;
+          for (int y = -block; y < 72; y += block) {
+            for (int x = -block; x < 136; x += block) {
+              int bx = x + shift;
+              int by = y;
+              int col = (x / block) + (y / block);
+              if ((col & 1) == 0) {
+                it.filled_rectangle(bx, by, block, block, GREY);
+              } else {
+                it.filled_rectangle(bx, by, block, block, BLACK);
+              }
+            }
+          }
+
+          // Zwarte band voor leesbare finishtekst.
+          it.filled_rectangle(0, 19, 128, 27, BLACK);
+          centered_flag_text(25, "FINISH", WHITE, 2);
+        }
+
+        id(flag_animation_frame)++;
+        return;
+      }
+
+
+      // =====================================================
+      // PAGINA 3 - F1 RACE CONTROL
+      // active_page = 2
+      // =====================================================
+
+      if (id(active_page) == 2) {
+        const Color TRACK_YELLOW(255, 214, 0);
+        const Color TRACK_RED(255, 48, 48);
+
+        auto valid_text = [&](const std::string &s) -> bool {
+          return !s.empty() && s != "unknown" && s != "unavailable" && s != "null";
+        };
+
+        auto color_from_hex = [&](std::string value) -> Color {
+          if (!valid_text(value)) return WHITE;
+          if (!value.empty() && value[0] == '#') value.erase(0, 1);
+          if (value.length() != 6) return WHITE;
+          uint32_t rgb = strtoul(value.c_str(), nullptr, 16);
+          return Color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
+        };
+
+        auto f1_team_color = [&](std::string team, Color fallback) -> Color {
+          for (auto &c : team) c = toupper(static_cast<unsigned char>(c));
+
+          // 2026 team colors used by the project.
+          // Voor Mercedes gebruiken we Petronas Turquoise i.p.v. primair zwart,
+          // omdat zwart op de zwarte matrixachtergrond onzichtbaar is.
+          if (team.find("RED BULL") != std::string::npos) return Color(54, 113, 198);       // #3671C6
+          if (team.find("MERCEDES") != std::string::npos) return Color(39, 244, 210);       // #27F4D2
+          if (team.find("FERRARI") != std::string::npos) return Color(232, 0, 32);          // #E80020
+          if (team.find("MCLAREN") != std::string::npos) return Color(255, 128, 0);         // #FF8000
+          if (team.find("ASTON MARTIN") != std::string::npos) return Color(0, 102, 94);     // #00665E
+          if (team.find("ALPINE") != std::string::npos) return Color(0, 144, 255);          // #0090FF
+          if (team.find("WILLIAMS") != std::string::npos) return Color(100, 196, 255);      // #64C4FF
+          if (team.find("RACING BULLS") != std::string::npos) return Color(102, 146, 255);  // #6692FF
+          if (team.find("AUDI") != std::string::npos || team.find("SAUBER") != std::string::npos)
+            return Color(200, 206, 212);                                                     // #C8CED4
+          if (team.find("HAAS") != std::string::npos) return Color(255, 255, 255);          // #FFFFFF
+          if (team.find("CADILLAC") != std::string::npos) return Color(255, 255, 255);      // #FFFFFF
+
+          return fallback;
+        };
+
+        auto lap_to_seconds = [&](const std::string &value) -> float {
+          int minutes = 0;
+          float seconds = 0.0f;
+          if (sscanf(value.c_str(), "%d:%f", &minutes, &seconds) != 2) return -1.0f;
+          return (minutes * 60.0f) + seconds;
+        };
+
+        auto fit_text = [&](std::string value, int max_width) -> std::string {
+          for (auto &c : value) c = toupper(static_cast<unsigned char>(c));
+          while (!value.empty() && text_width(value) > max_width) value.pop_back();
+          return value;
+        };
+
+        it.filled_rectangle(0, 0, 3, 64, RED);
+
+        std::string session = id(f1_delay_current_session);
+
+        auto is_known_session = [&](const std::string &s) -> bool {
+          return
+            s == "Practice 1" ||
+            s == "Practice 2" ||
+            s == "Practice 3" ||
+            s == "Qualifying" ||
+            s == "Sprint Qualifying" ||
+            s == "Sprint" ||
+            s == "Race";
+        };
+
+        if (!is_known_session(session)) {
+          uint32_t now_ms = millis();
+
+          bool finish_hold_active =
+            !id(f1_last_known_session).empty() &&
+            (int32_t) (id(f1_session_finish_hold_until) - now_ms) > 0;
+
+          bool normal_session_hold_active =
+            !id(f1_last_known_session).empty() &&
+            (int32_t) (id(f1_last_known_session_until) - now_ms) > 0;
+
+          if (finish_hold_active || normal_session_hold_active) {
+            session = id(f1_last_known_session);
+          }
+        }
+
+        std::string session_short = "F1";
+
+        if (session == "Practice 1") session_short = "P1";
+        else if (session == "Practice 2") session_short = "P2";
+        else if (session == "Practice 3") session_short = "P3";
+        else if (session == "Qualifying") {
+          float part = id(f1_delay_session_part);
+          if (!isnan(part) && part >= 1 && part <= 3) {
+            char buf[8]; snprintf(buf, sizeof(buf), "Q%.0f", part); session_short = buf;
+          } else session_short = "QUALI";
+        } else if (session == "Sprint Qualifying") {
+          float part = id(f1_delay_session_part);
+          if (!isnan(part) && part >= 1 && part <= 3) {
+            char buf[8]; snprintf(buf, sizeof(buf), "SQ%.0f", part); session_short = buf;
+          } else session_short = "SQ";
+        } else if (session == "Sprint") session_short = "SPRINT";
+        else if (session == "Race") session_short = "RACE";
+
+        // Titel linksboven: F1 rood, TIMING wit
+        draw_text(7, 2, "F1", RED);
+
+        int timing_x =
+          7 +
+          text_width("F1") +
+          2;
+
+        draw_text(
+          timing_x,
+          2,
+          "TIMING",
+          GREY
+        );
+
+        // Rechtsboven alleen LIVE tonen wanneer de F1-sessie live is
+        std::string live_status =
+          id(f1_delay_session_status);
+
+        if (live_status == "live") {
+          int live_width =
+            text_width("LIVE");
+
+          int live_x =
+            124 -
+            live_width;
+
+          draw_text(
+            live_x,
+            2,
+            "LIVE",
+            GREEN
+          );
+        }
+        it.horizontal_line(7, 11, 118, DARK_GREY);
+
+        // Neutrale Race Control-ruststand wanneer er geen herkenbare sessie actief is.
+        bool known_f1_session = is_known_session(session);
+
+        if (!known_f1_session) {
+          const std::string standby_title = "RACE CONTROL";
+          const std::string standby_text = "STANDBY";
+          draw_text(
+            (128 - text_width(standby_title)) / 2,
+            25,
+            standby_title,
+            GREY
+          );
+
+          draw_text(
+            (128 - text_width(standby_text)) / 2,
+            42,
+            standby_text,
+            DARK_GREY
+          );
+
+          return;
+        }
+
+        // Tien seconden lang de zes afvallers tonen na Q1/Q2 of SQ1/SQ2.
+        if (id(f1_elimination_screen) != 0) {
+          int32_t left = (int32_t) (id(f1_elimination_until_ms) - millis());
+          if (left > 0) {
+            std::string elim_title = "ELIMINATED";
+            if (id(f1_elimination_screen) == 1) elim_title = "Q1 ELIMINATED";
+            else if (id(f1_elimination_screen) == 2) elim_title = "Q2 ELIMINATED";
+            else if (id(f1_elimination_screen) == 3) elim_title = "SQ1 ELIMINATED";
+            else if (id(f1_elimination_screen) == 4) elim_title = "SQ2 ELIMINATED";
+
+            draw_text((128 - text_width(elim_title)) / 2, 15, elim_title, RED);
+
+            std::string e1 = id(ha_f1_eliminated_1).state;
+            std::string e2 = id(ha_f1_eliminated_2).state;
+            std::string e3 = id(ha_f1_eliminated_3).state;
+            std::string e4 = id(ha_f1_eliminated_4).state;
+            std::string e5 = id(ha_f1_eliminated_5).state;
+            std::string e6 = id(ha_f1_eliminated_6).state;
+
+            if (!valid_text(e1)) e1 = "---";
+            if (!valid_text(e2)) e2 = "---";
+            if (!valid_text(e3)) e3 = "---";
+            if (!valid_text(e4)) e4 = "---";
+            if (!valid_text(e5)) e5 = "---";
+            if (!valid_text(e6)) e6 = "---";
+
+            // Twee kolommen van drie, in positievolgorde.
+            draw_text(19, 28, e1, WHITE);
+            draw_text(76, 28, e2, WHITE);
+            draw_text(19, 39, e3, WHITE);
+            draw_text(76, 39, e4, WHITE);
+            draw_text(19, 50, e5, WHITE);
+            draw_text(76, 50, e6, WHITE);
+            return;
+          } else {
+            id(f1_elimination_screen) = 0;
+            id(f1_elimination_until_ms) = 0;
+          }
+        }
+
+        std::string p1 = id(f1_delay_top1);
+        std::string p2 = id(f1_delay_top2);
+        std::string p3 = id(f1_delay_top3);
+        if (!valid_text(p1)) p1 = "---";
+        if (!valid_text(p2)) p2 = "---";
+        if (!valid_text(p3)) p3 = "---";
+
+        std::string t1 = id(f1_delay_top1_laptime);
+        std::string t2 = id(f1_delay_top2_laptime);
+        std::string t3 = id(f1_delay_top3_laptime);
+        if (!valid_text(t1)) t1 = "--:--.---";
+        if (!valid_text(t2)) t2 = "--:--.---";
+        if (!valid_text(t3)) t3 = "--:--.---";
+
+        std::string shown_t2 = t2;
+        std::string shown_t3 = t3;
+
+        // P1 toont de volledige snelste rondetijd.
+        // P2 en P3 tonen altijd het verschil met P1, ook tijdens vrije trainingen.
+        if (t1 != "--:--.---") {
+          float leader = lap_to_seconds(t1);
+          float second = lap_to_seconds(t2);
+          float third = lap_to_seconds(t3);
+
+          if (leader >= 0.0f && second >= 0.0f) {
+            float gap = second - leader;
+            if (gap < 0.0f) gap = 0.0f;
+            char b[16];
+            snprintf(b, sizeof(b), "+%.3f", gap);
+            shown_t2 = b;
+          }
+
+          if (leader >= 0.0f && third >= 0.0f) {
+            float gap = third - leader;
+            if (gap < 0.0f) gap = 0.0f;
+            char b[16];
+            snprintf(b, sizeof(b), "+%.3f", gap);
+            shown_t3 = b;
+          }
+        }
+
+        Color p1_color = f1_team_color(
+          id(ha_f1_top1_team).state,
+          color_from_hex(id(f1_delay_top1_team_color))
+        );
+        Color p2_color = f1_team_color(
+          id(ha_f1_top2_team).state,
+          color_from_hex(id(f1_delay_top2_team_color))
+        );
+        Color p3_color = f1_team_color(
+          id(ha_f1_top3_team).state,
+          color_from_hex(id(f1_delay_top3_team_color))
+        );
+
+        if (session == "Race" || session == "Sprint") {
+          p1_color = f1_team_color(id(ha_f1_race_p1_team).state, p1_color);
+          p2_color = f1_team_color(id(ha_f1_race_p2_team).state, p2_color);
+          p3_color = f1_team_color(id(ha_f1_race_p3_team).state, p3_color);
+        }
+
+        const int row1_y = 16;
+        const int row2_y = 28;
+        const int row3_y = 40;
+
+        draw_text(7, row1_y, "1", GREY);
+        draw_text(7, row2_y, "2", GREY);
+        draw_text(7, row3_y, "3", GREY);
+
+        if (session == "Race" || session == "Sprint") {
+          std::string race_p1 = id(ha_f1_race_p1).state;
+          std::string race_p2 = id(ha_f1_race_p2).state;
+          std::string race_p3 = id(ha_f1_race_p3).state;
+
+          std::string gap_p1 = id(ha_f1_race_p1_gap).state;
+          std::string gap_p2 = id(ha_f1_race_p2_gap).state;
+          std::string gap_p3 = id(ha_f1_race_p3_gap).state;
+
+          auto format_gap = [&](std::string gap, bool leader) -> std::string {
+            if (leader) return "LEADER";
+            if (!valid_text(gap)) return "--";
+            if (gap == "LEADER") return "LEADER";
+
+            // Numerieke race-gap altijd met exact 3 decimalen tonen.
+            // Voorbeeld: 1.99 -> +1.990, 0.4 -> +0.400.
+            char *endptr = nullptr;
+            float seconds = strtof(gap.c_str(), &endptr);
+            if (endptr != gap.c_str() && *endptr == '\0') {
+              char buf[20];
+              snprintf(buf, sizeof(buf), "%+.3f", seconds);
+              return std::string(buf);
+            }
+
+            // Niet-numerieke waarden, zoals LAP/LAPS, ongemoeid laten.
+            return gap;
+          };
+
+          gap_p1 = format_gap(gap_p1, true);
+          gap_p2 = format_gap(gap_p2, false);
+          gap_p3 = format_gap(gap_p3, false);
+
+          if (!valid_text(race_p1)) race_p1 = "---";
+          if (!valid_text(race_p2)) race_p2 = "---";
+          if (!valid_text(race_p3)) race_p3 = "---";
+
+          draw_text(18, row1_y, race_p1, p1_color);
+          draw_text(18, row2_y, race_p2, p2_color);
+          draw_text(18, row3_y, race_p3, p3_color);
+
+          draw_text(124 - text_width(gap_p1), row1_y, gap_p1, GREY);
+          draw_text(124 - text_width(gap_p2), row2_y, gap_p2, GREY);
+          draw_text(124 - text_width(gap_p3), row3_y, gap_p3, GREY);
+        } else {
+          draw_text(18, row1_y, p1, p1_color);
+          draw_text(18, row2_y, p2, p2_color);
+          draw_text(18, row3_y, p3, p3_color);
+
+          draw_text(124 - text_width(t1), row1_y, t1, GREY);
+          draw_text(124 - text_width(shown_t2), row2_y, shown_t2, GREY);
+          draw_text(124 - text_width(shown_t3), row3_y, shown_t3, GREY);
+        }
+
+        it.horizontal_line(7, 51, 118, DARK_GREY);
+
+        std::string track = id(f1_delay_track_status);
+        float session_part = id(f1_delay_session_part);
+        std::string track_text = "---";
+        Color track_color = GREY;
+
+        if (session == "Race") {
+          track_text = "RACE";
+        } else if (session == "Sprint") {
+          track_text = "SPRINT";
+        } else if (session == "Qualifying") {
+          // Live F1 Sensor-data bevestigd:
+          // session_part 1 = Q1, 2 = Q2, 3 = Q3.
+          if (!isnan(session_part) && session_part >= 0.5f && session_part < 1.5f) {
+            track_text = "Q1";
+          } else if (!isnan(session_part) && session_part >= 1.5f && session_part < 2.5f) {
+            track_text = "Q2";
+          } else if (!isnan(session_part) && session_part >= 2.5f && session_part < 3.5f) {
+            track_text = "Q3";
+          } else {
+            track_text = "QUALI";
+          }
+        } else if (session == "Sprint Qualifying") {
+          // Dezelfde session_part-structuur gebruiken voor SQ1/SQ2/SQ3.
+          if (!isnan(session_part) && session_part >= 0.5f && session_part < 1.5f) {
+            track_text = "SQ1";
+          } else if (!isnan(session_part) && session_part >= 1.5f && session_part < 2.5f) {
+            track_text = "SQ2";
+          } else if (!isnan(session_part) && session_part >= 2.5f && session_part < 3.5f) {
+            track_text = "SQ3";
+          } else {
+            track_text = "SQ";
+          }
+        } else if (session == "Practice 1") {
+          track_text = "P1";
+        } else if (session == "Practice 2") {
+          track_text = "P2";
+        } else if (session == "Practice 3") {
+          track_text = "P3";
+        }
+
+        bool temporary_green = false;
+        if (id(f1_green_until_ms) != 0) {
+          int32_t green_left = (int32_t) (id(f1_green_until_ms) - millis());
+          temporary_green = green_left > 0;
+          if (!temporary_green) {
+            id(f1_green_until_ms) = 0;
+          }
+        }
+
+        if (track == "YELLOW") { track_text = "YELLOW"; track_color = TRACK_YELLOW; }
+        else if (track == "SC") { track_text = "SC"; track_color = TRACK_YELLOW; }
+        else if (track == "VSC") { track_text = "VSC"; track_color = TRACK_YELLOW; }
+        else if (track == "RED") { track_text = "RED"; track_color = TRACK_RED; }
+        else if (track == "CLEAR" && temporary_green) { track_text = "GREEN"; track_color = GREEN; }
+        else if (track == "CLEAR") {
+          if (session == "Race") track_text = "RACE";
+          else if (session == "Sprint") track_text = "SPRINT";
+          track_color = GREY;
+        }
+        else if (!valid_text(track)) {
+          // Geen track-status mag het reeds bepaalde sessielabel niet overschrijven.
+          // Dus bij Qualifying blijft QUALI/Q1/Q2/Q3 zichtbaar,
+          // bij Practice P1/P2/P3 en bij Race/Sprint RACE/SPRINT.
+          track_color = GREY;
+        }
+
+        std::string status = id(f1_delay_session_status);
+        bool timed_session =
+          session == "Qualifying" ||
+          session == "Sprint Qualifying";
+
+        bool show_chequered_line =
+          !timed_session &&
+          (status == "finished" || status == "finalised" || status == "ended");
+
+        if (show_chequered_line) {
+          // Kleine zwart/wit geblokte finishlijn linksonder i.p.v. tekst CHEQUERED.
+          // 7 blokken breed x 2 rijen, blokgrootte 3x3 px.
+          const int flag_x = 7;
+          const int flag_y = 55;
+          const int flag_block = 3;
+          const int flag_cols = 7;
+          const int flag_rows = 2;
+
+          for (int row = 0; row < flag_rows; row++) {
+            for (int col = 0; col < flag_cols; col++) {
+              if (((row + col) & 1) == 0) {
+                it.filled_rectangle(
+                  flag_x + col * flag_block,
+                  flag_y + row * flag_block,
+                  flag_block,
+                  flag_block,
+                  WHITE
+                );
+              }
+            }
+          }
+        } else {
+          draw_text(7, 55, track_text, track_color);
+        }
+
+        std::string bottom_right = "";
+        if (session == "Race" || session == "Sprint") {
+          // Race en Sprint werken hetzelfde: toon huidige ronde / totaal.
+          // Beide waarden volgen de centrale F1TV-vertraging uit Home Assistant.
+          float lap = id(f1_delay_race_lap);
+          float total_laps = id(f1_delay_total_laps);
+
+          if (!isnan(lap) && !isnan(total_laps)) {
+            char b[24];
+            snprintf(b, sizeof(b), "RONDE %.0f/%.0f", lap, total_laps);
+            bottom_right = b;
+          } else if (!isnan(lap)) {
+            char b[20];
+            snprintf(b, sizeof(b), "RONDE %.0f/--", lap);
+            bottom_right = b;
+          } else {
+            bottom_right = "RONDE --/--";
+          }
+        } else {
+          // De HA/F1-sensor is alleen het synchronisatiepunt.
+          // Daarna telt het paneel zelf iedere seconde af.
+          int base_seconds = id(f1_countdown_seconds);
+
+          if (base_seconds >= 0 && id(f1_countdown_sync_ms) != 0) {
+            uint32_t elapsed_ms = millis() - id(f1_countdown_sync_ms);
+            int remaining_seconds = base_seconds - (elapsed_ms / 1000);
+            if (remaining_seconds < 0) remaining_seconds = 0;
+
+            bool timed_session_now =
+              session == "Qualifying" ||
+              session == "Sprint Qualifying";
+
+            std::string timed_status = id(f1_delay_session_status);
+            for (auto &c : timed_status) {
+              c = tolower(static_cast<unsigned char>(c));
+            }
+
+            // Als LIVE iets later binnenkomt dan de countdown-update,
+            // kan de renderlus de finish alsnog veilig bewapenen.
+            if (
+              timed_session_now &&
+              timed_status == "live" &&
+              remaining_seconds > 0
+            ) {
+              id(f1_zero_chequered_armed) = true;
+              id(f1_zero_chequered_shown) = false;
+            }
+
+            if (
+              timed_session_now &&
+              remaining_seconds == 0 &&
+              id(f1_zero_chequered_armed) &&
+              !id(f1_zero_chequered_shown)
+            ) {
+              id(f1_zero_chequered_armed) = false;
+              id(f1_zero_chequered_shown) = true;
+              id(flag_animation) = 6;
+              id(flag_animation_frame) = 0;
+              id(f1_chequered_started_ms) = millis();
+
+              // Alleen het einde van Q3/SQ3 is het einde van de volledige
+              // kwalificatiesessie. Houd daarna F1 TIMING nog 10 minuten vast.
+              int final_part = isnan(id(f1_delay_session_part))
+                ? 0
+                : (int) lroundf(id(f1_delay_session_part));
+
+              if (final_part >= 3) {
+                id(f1_last_known_session) = session;
+                id(f1_session_finish_hold_until) = millis() + 600000UL;
+                id(f1_last_known_session_until) = id(f1_session_finish_hold_until);
+              }
+            }
+
+            int hours = remaining_seconds / 3600;
+            int minutes = (remaining_seconds % 3600) / 60;
+            int seconds = remaining_seconds % 60;
+
+            char b[16];
+            if (hours > 0) {
+              snprintf(b, sizeof(b), "%d:%02d:%02d", hours, minutes, seconds);
+            } else {
+              snprintf(b, sizeof(b), "%02d:%02d", minutes, seconds);
+            }
+            bottom_right = b;
+          } else {
+            std::string remaining = id(f1_delay_time_remaining);
+            if (valid_text(remaining)) {
+              bottom_right = remaining;
+            }
+          }
+        }
+
+        if (!bottom_right.empty()) {
+          bottom_right = fit_text(bottom_right, 70);
+          draw_text(124 - text_width(bottom_right), 55, bottom_right, GREY);
+        }
+
+        it.horizontal_line(7, 63, 118, track_color);
+        return;
+      }
+
+
+# ============================================================
+# AUTOMATISCHE HELDERHEID NA OPSTARTEN
+# 07:30 t/m 19:59 -> 90%
+# 20:00 t/m 07:29 -> 10%
+# ============================================================
+
+interval:
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            lambda: |-
+              static bool boot_brightness_done = false;
+              if (boot_brightness_done) return false;
+
+              auto now = id(ha_time).now();
+              if (!now.is_valid()) return false;
+
+              boot_brightness_done = true;
+              return true;
+          then:
+            - lambda: |-
+                auto now = id(ha_time).now();
+                int minutes = now.hour * 60 + now.minute;
+                float target = (minutes >= 450 && minutes < 1200) ? 90.0f : 10.0f;
+
+                auto call = id(matrix_brightness).make_call();
+                call.set_value(target);
+                call.perform();
+
+# ============================================================
+# REBOOT
+# ============================================================
+
+button:
+  - platform: restart
+    name: "Reboot"
+    id: matrix_reboot
+    icon: mdi:restart
+    entity_category: diagnostic
