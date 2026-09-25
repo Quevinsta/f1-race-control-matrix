@@ -1,12 +1,15 @@
 # F1 Race Control Matrix
 
+<p align="center">
+  <a href="README.md">🇬🇧 English</a> &nbsp;|&nbsp; <strong>🇳🇱 Nederlands</strong>
+</p>
+
 Een onofficieel communityproject voor een 128×64 HUB75-ledmatrix, aangestuurd door ESPHome en Home Assistant.
 
 Het project verandert een Waveshare ESP32-S3 RGB Matrix-controller en HUB75-paneel in een compact Race Control- en live-timingdisplay met sessielabels, top-3 timing, racegaten, rondeteller, baanstatusanimaties, kwalificatie-eliminatieschermen en instelbare F1TV/Viaplay-synchronisatie.
 
 > **Status:** private ontwikkelversie. De huidige configuratie wordt vanuit de geteste V12.6.37-firmware opgeschoond voordat de repository openbaar wordt gemaakt.
 
-[English README](README.md)
 
 ## Hardware
 
