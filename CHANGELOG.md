@@ -1,3 +1,16 @@
+## 2026-09-25 - Secure public build validation
+
+- Enabled ESPHome API encryption with a per-device secret.
+- Enabled encrypted OTA updates.
+- Fixed malformed `ha_f1_total_laps` YAML discovered during validation.
+- Recompiled successfully with ESPHome 2026.9.0 / ESP-IDF 5.5.5.
+- Validation build: 833,907 bytes total image size.
+- DIRAM/RAM usage: 113,807 / 341,760 bytes (33.3%).
+- Flash usage: 833,907 / 16,515,072 bytes (5.0%).
+- `firmware.factory.bin`, `firmware.ota.bin`, and `firmware.elf` generated successfully.
+- Build timestamp: 2026-09-25 16:39:12 +0200.
+- Result: `INFO Successfully compiled program.`
+
 # Changelog
 
 ## 0.1.0-private-preview - 2026-09-25
