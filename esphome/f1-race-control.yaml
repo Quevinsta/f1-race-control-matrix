@@ -1001,7 +1001,8 @@ sensor:
             value: !lambda 'return x;'
 
   - platform: homeassistant
-    id: ha_f1_total_laps    entity_id: sensor.f1_race_lap_count
+    id: ha_f1_total_laps
+    entity_id: sensor.f1_race_lap_count
     attribute: total_laps
     internal: true
     on_value:
