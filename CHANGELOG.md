@@ -23,3 +23,12 @@
 - Retained Race/Sprint timing, qualifying labels, flags, elimination overlay, F1TV/Viaplay Sync, standby and the 10-minute post-session hold.
 - Credentials remain externalized through ESPHome secrets.
 - RC1 must compile successfully before it is promoted to the repository's main firmware file.
+
+### RC1 validation
+
+- YAML validation passed with ESPHome 2026.9.0.
+- Full ESP-IDF compilation succeeded on 2026-09-25.
+- Firmware image size: 713,003 bytes.
+- DIRAM usage: 106,419 / 341,760 bytes (31.1%).
+- Flash usage: 713,003 / 16,515,072 bytes (4.3%).
+- No firmware was flashed to the development panel during this validation.
