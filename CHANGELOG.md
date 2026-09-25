@@ -14,3 +14,12 @@
 
 - Qualifying elimination overlay.
 - Sprint Qualifying elimination behavior still requires live-session validation.
+
+## Firmware cleanup RC1
+
+- Removed Voice Assistant / Jarvis code from the public firmware candidate.
+- Removed household-specific homepage rendering and sensors.
+- Public candidate now boots directly into F1 Race Control.
+- Retained Race/Sprint timing, qualifying labels, flags, elimination overlay, F1TV/Viaplay Sync, standby and the 10-minute post-session hold.
+- Credentials remain externalized through ESPHome secrets.
+- RC1 must compile successfully before it is promoted to the repository's main firmware file.
