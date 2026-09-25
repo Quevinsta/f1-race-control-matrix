@@ -36,8 +36,12 @@ psram:
 logger:
 
 api:
+  encryption:
+    key: !secret api_encryption_key
+
 ota:
   - platform: esphome
+    encryption:
 
 wifi:
   ssid: !secret wifi_ssid
