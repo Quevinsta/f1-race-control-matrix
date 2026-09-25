@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Final public-release cleanup — 2026-09-25
+
+- Replaced the remaining private-preview firmware header with release-candidate wording.
+- Changed the public Race/Sprint lap label from `RONDE` to `LAP` for international consistency.
+- Aligned OTA security documentation with the actual ESPHome configuration.
+
 ### Documentation and release cleanup — 2026-09-25
 
 - Consolidated duplicate installation documentation.
