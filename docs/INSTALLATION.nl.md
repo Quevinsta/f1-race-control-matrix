@@ -21,9 +21,9 @@ Deze handleiding neemt je stap voor stap mee van de losse hardware naar een werk
 ### 1. Hardware aansluiten
 
 1. Haal de voeding los tijdens het aansluiten.
-2. Verbind het Waveshare ESP32-S3 RGB Matrix-board met de HUB75/HUB75E-ingang van het LED-paneel.
-3. Controleer de richting van de connector en gebruik de **INPUT** van het paneel, niet de uitgang.
-4. Sluit de voeding van paneel/controller aan volgens de aansluitingen van het Waveshare-board en het paneel.
+2. Plaats het Waveshare ESP32-S3 RGB Matrix-board **rechtstreeks op de HUB75/HUB75E INPUT-connector van het LED-paneel**. Er is dus geen HUB75-lintkabel nodig tussen het Waveshare-board en het paneel.
+3. Controleer de richting van de connector en zorg dat het board op de **INPUT** van het paneel zit, niet op de uitgang.
+4. Sluit de USB-C-voedingsadapter aan op de speciale **POWER** USB-C-aansluiting van het Waveshare-board. **Sluit de voedingsadapter niet aan op de USB-aansluiting die voor data/programmeren wordt gebruikt.**
 5. Voor de geteste opstelling levert een Raspberry Pi 5 27 W USB-C-adapter voldoende vermogen.
 
 Sluit de HUB75-kabel niet aan of af terwijl de opstelling onder spanning staat.

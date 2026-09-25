@@ -21,9 +21,9 @@ This guide takes you from the bare hardware to a working F1 Race Control Matrix 
 ### 1. Connect the hardware
 
 1. Disconnect the power supply while connecting the hardware.
-2. Connect the Waveshare ESP32-S3 RGB Matrix board to the HUB75/HUB75E input of the LED panel.
-3. Make sure the connector orientation is correct and that you are using the panel's **INPUT**, not its output connector.
-4. Connect the panel/controller power according to the Waveshare and panel connections.
+2. Install the Waveshare ESP32-S3 RGB Matrix board **directly onto the HUB75/HUB75E INPUT connector of the LED panel**. No HUB75 ribbon cable is required between the Waveshare board and the panel.
+3. Make sure the connector orientation is correct and that the board is connected to the panel's **INPUT**, not its output connector.
+4. Connect the USB-C power adapter to the Waveshare board's dedicated **POWER** USB-C connector. **Do not connect the power adapter to the USB connector used for data/programming.**
 5. For the tested setup, a Raspberry Pi 5 27 W USB-C adapter provides sufficient power.
 
 Do not connect or disconnect the HUB75 cable while the setup is powered.
