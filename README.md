@@ -20,7 +20,7 @@ The project turns a Waveshare ESP32-S3 RGB Matrix controller and HUB75 panel int
 - Waveshare ESP32-S3 RGB Matrix board (ESP32-S3-N32R16)
 - 128×64 HUB75/HUB75E RGB matrix
 - Tested panel: P2.5, 320×160 mm, 1/32 scan
-- 5 V power supply with sufficient current capacity
+- 5 V power supply with sufficient current capacity (a Raspberry Pi 5 27 W USB-C power adapter is sufficient for the tested 128×64 panel setup)
 - Home Assistant
 - ESPHome 2026.9.0
 
