@@ -1,0 +1,15 @@
+# F1 Race Control Matrix - public firmware candidate
+#
+# Validated and successfully compiled with ESPHome 2026.9.0 on 2026-09-25.
+# Based on the tested V12.6.37 development firmware.
+#
+# NOTE:
+# The full public firmware source is being promoted from the validated RC1
+# candidate. See the project README and installation documentation.
+#
+# Required secrets:
+#   wifi_ssid
+#   wifi_password
+#
+# This marker file will be replaced by the complete validated source before
+# the public v1.0.0 release.
