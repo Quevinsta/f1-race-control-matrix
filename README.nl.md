@@ -40,7 +40,7 @@ Het project verandert een Waveshare ESP32-S3 RGB Matrix-controller en HUB75-pane
 
 ## Installatie
 
-Voor de volledige stap-voor-stap installatie — van het aansluiten van de HUB75-hardware en flashen van de controller tot Home Assistant en synchronisatie — zie de **[installatiegids](docs/INSTALLATION.md#nederlands)**.
+Voor de volledige stap-voor-stap installatie — van het aansluiten van de HUB75-hardware en flashen van de controller tot Home Assistant en synchronisatie — zie de **[installatiegids](docs/INSTALLATION.nl.md)**.
 
 ## Indeling van de repository
 
