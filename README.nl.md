@@ -38,6 +38,10 @@ Het project verandert een Waveshare ESP32-S3 RGB Matrix-controller en HUB75-pane
 - Kwalificatie-eliminatiescherm (experimenteel)
 - Automatisch omschakelen naar Race Control kort voor een sessie
 
+## Installatie
+
+Voor de volledige stap-voor-stap installatie — van het aansluiten van de HUB75-hardware en flashen van de controller tot Home Assistant en synchronisatie — zie de **[installatiegids](docs/INSTALLATION.md#nederlands)**.
+
 ## Indeling van de repository
 
 - `esphome/` — ESPHome-firmware en voorbeeld-secrets
