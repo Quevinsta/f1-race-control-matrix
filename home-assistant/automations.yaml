@@ -1,0 +1,37 @@
+alias: F1 Race Control - Switch 5 minutes before session
+description: Switches the matrix to F1 Race Control five minutes before an F1 session.
+triggers:
+  - trigger: time_pattern
+    minutes: "*"
+conditions:
+  - condition: template
+    value_template: >
+      {% set starts = [
+        state_attr('sensor.f1_next_race', 'first_practice_start'),
+        state_attr('sensor.f1_next_race', 'second_practice_start'),
+        state_attr('sensor.f1_next_race', 'third_practice_start'),
+        state_attr('sensor.f1_next_race', 'sprint_qualifying_start'),
+        state_attr('sensor.f1_next_race', 'sprint_start'),
+        state_attr('sensor.f1_next_race', 'qualifying_start'),
+        state_attr('sensor.f1_next_race', 'race_start')
+      ] %}
+      {% set ns = namespace(match=false) %}
+      {% for start in starts %}
+        {% if start not in [none, '', 'unknown', 'unavailable'] %}
+          {% set start_ts = as_timestamp(start, default=none) %}
+          {% if start_ts is not none %}
+            {% set seconds_until = start_ts - as_timestamp(now()) %}
+            {% if 240 <= seconds_until < 300 %}
+              {% set ns.match = true %}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+      {{ ns.match }}
+actions:
+  - action: select.select_option
+    target:
+      entity_id: select.waveshare_matrix_select_page
+    data:
+      option: "F1 Race Control"
+mode: single
