@@ -30,7 +30,11 @@ Do not connect or disconnect the HUB75 cable while the setup is powered.
 
 ### 2. Prepare Home Assistant
 
-Install and configure your F1 data integration first.
+Install the **F1 Sensor** custom integration by Nicxe first:
+
+**https://github.com/Nicxe/f1_sensor**
+
+This project uses that integration as its F1 data source. Add it to Home Assistant through **HACS** as a custom repository, install the integration, restart Home Assistant if requested, and then configure F1 Sensor in Home Assistant before continuing with this guide.
 
 The project expects the source entities documented in [entities.md](entities.md), including session, track-status, timing, lap-count and next-race data.
 
