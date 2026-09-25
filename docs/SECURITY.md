@@ -22,7 +22,7 @@ Generate a unique API key for every controller:
 openssl rand -base64 32
 ```
 
-The OTA configuration reuses the API encryption key, so a second OTA key is not required.
+OTA uses ESPHome's encrypted OTA transport as configured by the firmware. No separate OTA secret is referenced by this configuration.
 
 Never commit your real `secrets.yaml`. If a key or password is accidentally published, rotate it before continuing to use the device.
 
@@ -48,6 +48,6 @@ Genereer voor iedere controller een unieke API-sleutel:
 openssl rand -base64 32
 ```
 
-De OTA-configuratie gebruikt dezelfde API-encryptiesleutel. Een tweede OTA-sleutel is daarom niet nodig.
+OTA gebruikt het versleutelde OTA-transport van ESPHome zoals dit in de firmware is geconfigureerd. Deze configuratie verwijst niet naar een aparte OTA-secret.
 
 Commit je echte `secrets.yaml` nooit naar Git. Als een sleutel of wachtwoord per ongeluk openbaar is gemaakt, vervang die dan voordat je het apparaat verder gebruikt.

@@ -1,11 +1,10 @@
-# IMPORTANT: This is a sanitized private-preview build.
 # ============================================================
 # WAVESHARE MATRIX
 # ESPHome 2026.9.0
 # Waveshare ESP32-S3 RGB Matrix Driver Board
 # HUB75 128x64
 #
-# Public preview based on V12.6.37
+# Public release candidate based on the V12.6.37 development line
 # F1TV/Viaplay sync + 10-minute post-session timing hold
 #
 # Display:
@@ -2291,14 +2290,14 @@ display:
 
           if (!isnan(lap) && !isnan(total_laps)) {
             char b[24];
-            snprintf(b, sizeof(b), "RONDE %.0f/%.0f", lap, total_laps);
+            snprintf(b, sizeof(b), "LAP %.0f/%.0f", lap, total_laps);
             bottom_right = b;
           } else if (!isnan(lap)) {
             char b[20];
-            snprintf(b, sizeof(b), "RONDE %.0f/--", lap);
+            snprintf(b, sizeof(b), "LAP %.0f/--", lap);
             bottom_right = b;
           } else {
-            bottom_right = "RONDE --/--";
+            bottom_right = "LAP --/--";
           }
         } else {
           // De HA/F1-sensor is alleen het synchronisatiepunt.
