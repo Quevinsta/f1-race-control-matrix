@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/f1-race-control-matrix-banner.png" alt="F1 Race Control Matrix — live timing and Race Control on a 128×64 HUB75 LED matrix" width="100%">
+</p>
+
 # F1 Race Control Matrix
 
 <p align="center">
