@@ -38,6 +38,10 @@ The project turns a Waveshare ESP32-S3 RGB Matrix controller and HUB75 panel int
 - Qualifying elimination overlay (experimental)
 - Automatic page switch shortly before a session
 
+## Installation
+
+For a complete step-by-step setup — from connecting the HUB75 hardware and flashing the controller to configuring Home Assistant and synchronization — see the **[Installation guide](docs/INSTALLATION.md#english)**.
+
 ## Repository layout
 
 - `esphome/` — ESPHome firmware and example secrets
