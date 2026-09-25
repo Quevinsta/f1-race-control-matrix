@@ -30,7 +30,11 @@ Sluit de HUB75-kabel niet aan of af terwijl de opstelling onder spanning staat.
 
 ### 2. Home Assistant voorbereiden
 
-Installeer en configureer eerst je F1-data-integratie.
+Installeer eerst de **F1 Sensor** custom integration van Nicxe:
+
+**https://github.com/Nicxe/f1_sensor**
+
+Dit project gebruikt deze integratie als F1-databron. Voeg de repository via **HACS** als custom repository toe aan Home Assistant, installeer de integratie, herstart Home Assistant wanneer daarom wordt gevraagd en configureer daarna F1 Sensor voordat je verdergaat met deze handleiding.
 
 Het project verwacht de bronentiteiten die in [entities.md](entities.md) staan beschreven, waaronder gegevens voor sessie, baanstatus, timing, rondes en de volgende race.
 
