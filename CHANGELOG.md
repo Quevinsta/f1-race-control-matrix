@@ -1,4 +1,17 @@
-## 2026-09-25 - Secure public build validation
+# Changelog
+
+## Unreleased
+
+### Documentation and release cleanup — 2026-09-25
+
+- Consolidated duplicate installation documentation.
+- Consolidated duplicate ESPHome secrets examples.
+- Synchronized installation, hardware, entity and Home Assistant documentation.
+- Added Dutch translations to the remaining user-facing documentation.
+- Removed obsolete references to household-specific homepage sensors from the public documentation.
+- Prepared the repository for final public-release validation.
+
+### Secure public build validation — 2026-09-25
 
 - Enabled ESPHome API encryption with a per-device secret.
 - Enabled encrypted OTA updates.
@@ -11,9 +24,7 @@
 - Build timestamp: 2026-09-25 16:39:12 +0200.
 - Result: `INFO Successfully compiled program.`
 
-# Changelog
-
-## 0.1.0-private-preview - 2026-09-25
+## 0.1.0-private-preview — 2026-09-25
 
 - Initial private GitHub project structure.
 - Added sanitized ESPHome development configuration based on V12.6.37.
@@ -28,14 +39,13 @@
 - Qualifying elimination overlay.
 - Sprint Qualifying elimination behavior still requires live-session validation.
 
-## Firmware cleanup RC1
+### Firmware cleanup RC1
 
 - Removed Voice Assistant / Jarvis code from the public firmware candidate.
 - Removed household-specific homepage rendering and sensors.
-- Public candidate now boots directly into F1 Race Control.
+- Public candidate boots directly into F1 Race Control.
 - Retained Race/Sprint timing, qualifying labels, flags, elimination overlay, F1TV/Viaplay Sync, standby and the 10-minute post-session hold.
 - Credentials remain externalized through ESPHome secrets.
-- RC1 must compile successfully before it is promoted to the repository's main firmware file.
 
 ### RC1 validation
 

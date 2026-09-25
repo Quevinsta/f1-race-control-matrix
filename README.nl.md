@@ -8,7 +8,7 @@ Een onofficieel communityproject voor een 128×64 HUB75-ledmatrix, aangestuurd d
 
 Het project verandert een Waveshare ESP32-S3 RGB Matrix-controller en HUB75-paneel in een compact Race Control- en live-timingdisplay met sessielabels, top-3 timing, racegaten, rondeteller, baanstatusanimaties, kwalificatie-eliminatieschermen en instelbare F1TV/Viaplay-synchronisatie.
 
-> **Status:** private ontwikkelversie. De huidige configuratie wordt vanuit de geteste V12.6.37-firmware opgeschoond voordat de repository openbaar wordt gemaakt.
+> **Status:** release candidate. De huidige configuratie heeft de compilevalidatie doorstaan en wordt nog tijdens live sessies getest vóór de eerste publieke release.
 
 
 ## Hardware
@@ -47,9 +47,9 @@ Dit is een onofficieel project en is niet verbonden aan, goedgekeurd door of gel
 
 Deze repository bevat geen officiële Formula 1-logo's of auteursrechtelijk beschermde broadcastgraphics. Gebruikers zijn zelf verantwoordelijk voor de databron/integratie die zij met Home Assistant verbinden en voor naleving van de bijbehorende voorwaarden en toepasselijke rechten.
 
-## Huidige ontwikkelbasis
+## Huidige release candidate
 
-De eerste GitHub-versie is gebaseerd op de lokaal geteste **V12.6.37**-configuratie. Persoonlijke inloggegevens, lokale netwerkgegevens en huishoudspecifieke configuratie worden verwijderd voordat het project openbaar wordt gemaakt.
+De release candidate is gebaseerd op de geteste **V12.6.37**-ontwikkellijn en is opgeschoond voor distributie. Inloggegevens staan buiten de firmware via ESPHome-secrets. De beveiligde publieke build compileerde op 25 september 2026 succesvol met ESPHome 2026.9.0 / ESP-IDF 5.5.5.
 
 ## Licentie
 
