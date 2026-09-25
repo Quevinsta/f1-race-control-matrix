@@ -29,7 +29,7 @@ Het project verandert een Waveshare ESP32-S3 RGB Matrix-controller en HUB75-pane
 - F1 Race Control / live-timingpagina
 - Ondersteuning voor vrije trainingen, kwalificatie, sprintkwalificatie, sprint en race
 - Q1/Q2/Q3-sessielabels
-- Top-3 timing en racegaten
+- Top-3 timing en racegaten (de matrix toont alleen timinggegevens van de top 3 coureurs)
 - Huidige/totale rondeweergave voor race en sprint
 - GREEN-, YELLOW-, RED-, VSC-, SC- en CHEQUERED-animaties
 - Timingpagina blijft 10 minuten zichtbaar nadat een sessie is afgelopen
