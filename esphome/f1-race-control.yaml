@@ -842,6 +842,23 @@ text_sensor:
     attribute: gap_to_leader
     internal: true
 
+  # Compacte bandensensoren uit Home Assistant.
+  # Deze worden via TLA gekoppeld aan sensor.f1_current_tyres.
+  - platform: homeassistant
+    id: ha_f1_tyre_p1
+    entity_id: sensor.f1_tyre_p1
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_tyre_p2
+    entity_id: sensor.f1_tyre_p2
+    internal: true
+
+  - platform: homeassistant
+    id: ha_f1_tyre_p3
+    entity_id: sensor.f1_tyre_p3
+    internal: true
+
   - platform: homeassistant
     id: ha_f1_track_status
     entity_id: sensor.f1_track_status
@@ -2134,6 +2151,19 @@ display:
           std::string gap_p2 = id(ha_f1_race_p2_gap).state;
           std::string gap_p3 = id(ha_f1_race_p3_gap).state;
 
+          std::string tyre_p1 = id(ha_f1_tyre_p1).state;
+          std::string tyre_p2 = id(ha_f1_tyre_p2).state;
+          std::string tyre_p3 = id(ha_f1_tyre_p3).state;
+
+          auto tyre_color = [&](const std::string &compound) -> Color {
+            if (compound == "S") return Color(255, 0, 0);
+            if (compound == "M") return Color(255, 255, 0);
+            if (compound == "H") return WHITE;
+            if (compound == "I") return Color(0, 255, 0);
+            if (compound == "W") return Color(0, 120, 255);
+            return GREY;
+          };
+
           auto format_gap = [&](std::string gap, bool leader) -> std::string {
             if (leader) return "LEADER";
             if (!valid_text(gap)) return "--";
@@ -2170,6 +2200,13 @@ display:
           draw_text(18, row1_y, race_p1, p1_color);
           draw_text(18, row2_y, race_p2, p2_color);
           draw_text(18, row3_y, race_p3, p3_color);
+
+          if (tyre_p1 == "S" || tyre_p1 == "M" || tyre_p1 == "H" || tyre_p1 == "I" || tyre_p1 == "W")
+            draw_text(43, row1_y, tyre_p1, tyre_color(tyre_p1));
+          if (tyre_p2 == "S" || tyre_p2 == "M" || tyre_p2 == "H" || tyre_p2 == "I" || tyre_p2 == "W")
+            draw_text(43, row2_y, tyre_p2, tyre_color(tyre_p2));
+          if (tyre_p3 == "S" || tyre_p3 == "M" || tyre_p3 == "H" || tyre_p3 == "I" || tyre_p3 == "W")
+            draw_text(43, row3_y, tyre_p3, tyre_color(tyre_p3));
 
           draw_text(124 - text_width(gap_p1), row1_y, gap_p1, GREY);
           draw_text(124 - text_width(gap_p2), row2_y, gap_p2, GREY);
