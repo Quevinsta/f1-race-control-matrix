@@ -30,6 +30,7 @@ The project turns a Waveshare ESP32-S3 RGB Matrix controller and HUB75 panel int
 - Practice, Qualifying, Sprint Qualifying, Sprint and Race session handling
 - Q1/Q2/Q3 session labels
 - Top-three timing and race gaps (the matrix displays timing data for the top 3 drivers only)
+- Current tyre compound behind each top-three driver during Race and Sprint: **S** (red), **M** (yellow), **H** (white), **I** (green) and **W** (blue). Requires the Home Assistant `sensor.f1_tyre_p1`, `sensor.f1_tyre_p2` and `sensor.f1_tyre_p3` template sensors.
 - Current/total lap display for Race and Sprint
 - GREEN, YELLOW, RED, VSC, SC and CHEQUERED animations
 - 10-minute timing hold after a session finishes
