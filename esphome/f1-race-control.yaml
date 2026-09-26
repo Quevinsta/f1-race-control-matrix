@@ -2157,6 +2157,12 @@ display:
           gap_p2 = format_gap(gap_p2, false);
           gap_p3 = format_gap(gap_p3, false);
 
+          // Race helpers can temporarily expose "---" even while the general
+          // top-three sensors already contain the current driver code.
+          if ((!valid_text(race_p1) || race_p1 == "---") && valid_text(p1)) race_p1 = p1;
+          if ((!valid_text(race_p2) || race_p2 == "---") && valid_text(p2)) race_p2 = p2;
+          if ((!valid_text(race_p3) || race_p3 == "---") && valid_text(p3)) race_p3 = p3;
+
           if (!valid_text(race_p1)) race_p1 = "---";
           if (!valid_text(race_p2)) race_p2 = "---";
           if (!valid_text(race_p3)) race_p3 = "---";
