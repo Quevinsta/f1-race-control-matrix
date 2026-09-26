@@ -30,6 +30,7 @@ Het project verandert een Waveshare ESP32-S3 RGB Matrix-controller en HUB75-pane
 - Ondersteuning voor vrije trainingen, kwalificatie, sprintkwalificatie, sprint en race
 - Q1/Q2/Q3-sessielabels
 - Top-3 timing en racegaten (de matrix toont alleen timinggegevens van de top 3 coureurs)
+- Actuele bandencompound achter iedere top-3-coureur tijdens Race en Sprint: **S** (rood), **M** (geel), **H** (wit), **I** (groen) en **W** (blauw). Hiervoor zijn de Home Assistant-templatesensoren `sensor.f1_tyre_p1`, `sensor.f1_tyre_p2` en `sensor.f1_tyre_p3` nodig.
 - Huidige/totale rondeweergave voor race en sprint
 - GREEN-, YELLOW-, RED-, VSC-, SC- en CHEQUERED-animaties
 - Timingpagina blijft 10 minuten zichtbaar nadat een sessie is afgelopen
