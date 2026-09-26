@@ -57,6 +57,14 @@ Check the Home Assistant configuration and restart Home Assistant.
 
 After the restart, verify that the helper sensors from the package exist. The matrix displays timing data for the **top 3 drivers only**.
 
+For the tyre-compound display, also verify that the F1 Sensor integration provides `sensor.f1_current_tyres`. The Home Assistant package creates these three helper sensors automatically:
+
+- `sensor.f1_tyre_p1`
+- `sensor.f1_tyre_p2`
+- `sensor.f1_tyre_p3`
+
+They match each top-three driver's TLA to the `drivers` attribute of `sensor.f1_current_tyres` and expose `compound_short`. The matrix uses these helpers to display **S**, **M**, **H**, **I** or **W** during Race and Sprint. No separate manual template YAML is required when you use the supplied `home-assistant/f1_race_control.yaml` package.
+
 The optional `home-assistant/automations.yaml` can automatically switch the matrix to the Race Control page shortly before a session. Change its matrix page-select entity ID to match your installation before enabling it.
 
 ### 3. Prepare ESPHome
@@ -149,7 +157,7 @@ Check that:
 - the matrix starts correctly;
 - Power and Brightness work;
 - page selection works;
-- the Home Assistant helper sensors are available;
+- the Home Assistant helper sensors are available, including `sensor.f1_tyre_p1`, `sensor.f1_tyre_p2` and `sensor.f1_tyre_p3` when `sensor.f1_current_tyres` is available;
 - F1TV/Viaplay Sync changes the configured delay;
 - the top three driver rows can receive timing data;
 - lap information appears during Race/Sprint where available;
