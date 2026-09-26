@@ -57,6 +57,14 @@ Controleer de Home Assistant-configuratie en herstart Home Assistant.
 
 Controleer na de herstart of de helpersensoren uit het package aanwezig zijn. De matrix toont timinggegevens van **alleen de top 3 coureurs**.
 
+Controleer voor de bandencompoundweergave ook of de F1 Sensor-integratie `sensor.f1_current_tyres` levert. Het Home Assistant-package maakt automatisch deze drie helpersensoren aan:
+
+- `sensor.f1_tyre_p1`
+- `sensor.f1_tyre_p2`
+- `sensor.f1_tyre_p3`
+
+Deze koppelen de TLA/coureurscode van iedere top-3-coureur aan het `drivers`-attribuut van `sensor.f1_current_tyres` en lezen `compound_short` uit. De matrix gebruikt deze helpers om tijdens Race en Sprint **S**, **M**, **H**, **I** of **W** weer te geven. Wanneer je het meegeleverde package `home-assistant/f1_race_control.yaml` gebruikt, hoef je hiervoor dus geen losse template-YAML handmatig toe te voegen.
+
 De optionele `home-assistant/automations.yaml` kan de matrix kort voor een sessie automatisch naar de Race Control-pagina schakelen. Pas vóór gebruik de page-select-entity aan naar die van jouw installatie.
 
 ### 3. ESPHome voorbereiden
@@ -149,7 +157,7 @@ Controleer of:
 - de matrix correct opstart;
 - Power en Brightness werken;
 - paginaselectie werkt;
-- de Home Assistant-helpersensoren beschikbaar zijn;
+- de Home Assistant-helpersensoren beschikbaar zijn, inclusief `sensor.f1_tyre_p1`, `sensor.f1_tyre_p2` en `sensor.f1_tyre_p3` wanneer `sensor.f1_current_tyres` beschikbaar is;
 - F1TV/Viaplay Sync de ingestelde vertraging wijzigt;
 - de drie coureurregels timingdata kunnen ontvangen;
 - ronde-informatie tijdens Race/Sprint verschijnt waar beschikbaar;
