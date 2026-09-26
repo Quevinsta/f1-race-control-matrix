@@ -223,3 +223,45 @@ template:
               {% if driver.current_position | string == '3' %}{% set ns.driver = driver %}{% endif %}
             {% endfor %}
             {{ ns.driver.team_color if ns.driver else '' }}
+
+      # Current tyre compound for each top-three driver.
+      # Match by TLA instead of tyre-data position because position can be null.
+      - name: "F1 Tyre P1"
+        unique_id: f1_tyre_p1
+        state: >
+          {% set drivers = state_attr('sensor.f1_current_tyres', 'drivers') or [] %}
+          {% set tla = states('sensor.f1_top_three_p1') %}
+          {% set ns = namespace(compound='') %}
+          {% for driver in drivers %}
+            {% if driver.tla | default('') == tla %}
+              {% set ns.compound = driver.compound_short | default('', true) %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.compound }}
+
+      - name: "F1 Tyre P2"
+        unique_id: f1_tyre_p2
+        state: >
+          {% set drivers = state_attr('sensor.f1_current_tyres', 'drivers') or [] %}
+          {% set tla = states('sensor.f1_top_three_p2') %}
+          {% set ns = namespace(compound='') %}
+          {% for driver in drivers %}
+            {% if driver.tla | default('') == tla %}
+              {% set ns.compound = driver.compound_short | default('', true) %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.compound }}
+
+      - name: "F1 Tyre P3"
+        unique_id: f1_tyre_p3
+        state: >
+          {% set drivers = state_attr('sensor.f1_current_tyres', 'drivers') or [] %}
+          {% set tla = states('sensor.f1_top_three_p3') %}
+          {% set ns = namespace(compound='') %}
+          {% for driver in drivers %}
+            {% if driver.tla | default('') == tla %}
+              {% set ns.compound = driver.compound_short | default('', true) %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.compound }}
+
